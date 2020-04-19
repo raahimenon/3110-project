@@ -1,11 +1,14 @@
+open Enemy
+open Item 
+open Player
 type tile = 
   | Floor of Animations.image 
   | Wall of Animations.image
   | Exit of Animations.image
 
-val tile_size : int
-val next_room : t -> t
-val update_room: t -> t
+let tile_size = 0
+let next_room a = failwith "unimplemented"
+let update_room =  failwith "unimplemented"
 
 type t = 
   {

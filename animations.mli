@@ -1,5 +1,5 @@
 type image = Graphics.color array array
-type animation = image array
+type animation = string * image array
 
 (** [load_image f] is the [image] generated from the text file [f] relative to 
     the current filepath. [f] must be formatted like a matrix where position
@@ -7,9 +7,9 @@ type animation = image array
     spaces and rows by newlines*)
 val load_image : string -> image
 
-(** [load_animation f] is the [animation] generated from the images stored in 
-    folder [f] relative to the current filepath *)
-val load_animation : string -> animation
+(** [load_animation f n] is the [animation] with name [n] generated from the 
+    images stored in folder [f] relative to the current filepath *)
+val load_animation : string -> string -> animation
 
 (** [load_animations f] is the [animation list] generated from the animations
     stored in folder [f] relative to the current filepath *)

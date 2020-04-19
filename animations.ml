@@ -1,5 +1,5 @@
 type image = Graphics.color array array
-type animation = image array
+type animation = string * image array
 
 let load_image f : image = 
   let in_image = try open_in f with _ -> failwith (f ^ " not found") in
@@ -26,18 +26,19 @@ let load_image f : image =
   | [] -> [||]
   | h::t -> h::t |> Array.of_list
 
-let load_animation f : animation = 
+let load_animation f name : animation = 
   let files = Sys.readdir f in
-  Array.map (fun file -> load_image (f^"/"^file)) files
+  name, Array.map (fun file -> load_image (f^"/"^file)) files
 
 let load_animations f : animation list = 
   let animations = Sys.readdir f |> Array.to_list in
-  List.map (fun anim -> load_animation (f^"/"^anim)) animations
+  List.map (fun anim -> load_animation (f^"/"^anim) anim) animations
 
 let next_frame i anim = 
+  let anim = snd anim in
   if i + 1 >= Array.length anim then anim.(0) else anim.(i+1)
 
-let curr_frame i anim = anim.(i)
+let curr_frame i anim = (snd anim).(i)
 
 let im_to_str (im : image) : string = 
   let pix_to_str (pix : Graphics.color) : string =

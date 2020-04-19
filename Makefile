@@ -1,4 +1,4 @@
-MODULES=loading animations buff combat enemy entity gamestate item player room
+MODULES= animations buff combat enemy entity gamestate item player room
 OBJECTS=$(MODULES:=.cmo)
 MLIS=$(MODULES:=mli)
 MLS=$(MODULES:=ml)

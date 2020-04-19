@@ -1,6 +1,6 @@
 open OUnit2
 
-let test_img = Loading.load_image "test.txt"
+let test_img = Animations.load_image "test.txt"
 
 (**[make_load_image_test name im expected_output] constructs an OUnit test
    named [name] that asserts the quality of [expected_output] with 
@@ -10,7 +10,7 @@ let make_load_image_test
     (im:Graphics.color array array)
     (expected_output:string) : test = 
   name >:: (fun _ ->
-      assert_equal expected_output (Loading.im_to_str im)
+      assert_equal expected_output (Animations.im_to_str im)
         ~printer: (fun x -> x)
     )
 

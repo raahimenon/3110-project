@@ -26,7 +26,7 @@ let default_room =
    tiles = (Room.Floor (Animations.load_image "player.txt")) |> Array.make_matrix 2 2 }
 
 
-let main = open_graph " 480x270"; Gamestate.game_loop 
+let main = open_graph " 600x600"; Gamestate.game_loop 
     {running = true; current_room= default_room} (Unix.gettimeofday ());
   close_graph
 

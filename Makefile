@@ -1,4 +1,4 @@
-MODULES= animations buff combat enemy entity gamestate item player room
+MODULES= room gamestate entity player animations buff combat main
 OBJECTS=$(MODULES:=.cmo)
 MLIS=$(MODULES:=mli)
 MLS=$(MODULES:=ml)
@@ -16,7 +16,7 @@ test:
 	$(OCAMLBUILD) -tag 'debug' $(TEST) && ./$(TEST)
 
 play:
-	$(OCAMLBUILD) $(LT) && ./$(LT)
+	$(OCAMLBUILD) $(MAIN) && ./$(MAIN)
 
 clean:
 	ocamlbuild -clean

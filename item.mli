@@ -1,2 +1,1 @@
-open  Entity
-type t = Entity.t
+type t 

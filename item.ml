@@ -1,2 +1,1 @@
-include Entity
-type t = Entity.t
+type t = int

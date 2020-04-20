@@ -15,7 +15,7 @@ let make_load_image_test
     )
 
 
-(*)
+(*
   (**[make_anims_from_direction_test name obj dir expected_output] constructs an
    OUnit test named [name] that asserts the quality of [expected_output] with
    the names of [anims_from_direction obj dir]*)
@@ -59,7 +59,7 @@ let load_tests = [
     "0,0,0,0 0,255,255,255\n255,0,255,255 255,255,0,255"
 ]
 
-(*)
+(*
   let anim_tests = [
   make_anims_from_direction_test
     "trainer down"

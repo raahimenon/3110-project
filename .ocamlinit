@@ -1,4 +1,5 @@
 #require "oUnit";;
 #require "graphics";;
 #directory "_build";;
+#load "gameVars.cmo";;
 #load "animations.cmo";;

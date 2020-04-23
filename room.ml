@@ -9,7 +9,7 @@ type t =
     player: Player.t;
     tiles: tile array array;
   }
-let tile_size = 0
+
 let next_room t = t
 let update_room t f = {t with player = Player.update t.player f}
 let draw_room t = Player.draw t.player

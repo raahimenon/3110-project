@@ -1,16 +1,18 @@
 open Entity
-type pos_t =  {x : int; y:int} 
+type pos_t =  {x : float; y:float} 
 type size_t = int*int
-type name_t = int*int
+type name_t = string
 type entity_frame = Animations.image
 type entity_state = int
 type stat_type = Combat of Combat.t | Buff of Buff.t
 type entity_id = int
+type direction = |Up |Down |Left |Right
 
 type player_type =  {
-  animations: (string * Animations.animation) list;
-  curr_anim: string;
+  animations: Animations.animation list;
+  curr_anim: Animations.animation;
   curr_frame_num: int;
+  direction: direction;
   size : size_t;
   name : name_t;
   frame : entity_frame;
@@ -22,3 +24,5 @@ type player_type =  {
   unique_stats : stat_type;
 }
 module Player : Entity with type t = player_type
+
+val make_player : name_t -> entity_id -> player_type

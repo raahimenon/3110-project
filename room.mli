@@ -9,7 +9,6 @@ type t =
     tiles: tile array array;
   }
 
-val tile_size : int
 val next_room : t -> t
 val update_room: t -> (Player.t -> Player.t) -> t
 val draw_room: t -> unit

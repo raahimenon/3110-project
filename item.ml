@@ -22,15 +22,12 @@ type item_type = {
 module Item : (Entity with type t = item_type)  = struct
   type t =  item_type
   let update t f = f t
-  let draw t = 
+  let draw w t = 
     let pos = match t.pos with
       | Inventory -> failwith "cannot draw inventory item"
       | Position record -> [|record.x; record.y|]
     in
-    draw_image
-      (Animations.frame t.curr_anim t.curr_frame_num |> make_image)
-      (pos.(0) *. GameVars.tile_size |> int_of_float)
-      (pos.(1) *. GameVars.tile_size |> int_of_float)
+    ()
 end
 
 let make_item name id = 

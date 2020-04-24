@@ -29,10 +29,7 @@ type enemy_type =  {
 module  Enemy : (Entity with type t = enemy_type)  = struct
   type t =  enemy_type
   let update t f = f t
-  let draw t = draw_image
-      (Animations.frame t.curr_anim t.curr_frame_num |> make_image)
-      (t.pos.x *. GameVars.tile_size |> int_of_float)
-      (t.pos.y *. GameVars.tile_size |> int_of_float)
+  let draw w t = ()
 end
 
 let make_enemy name id = 

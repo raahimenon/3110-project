@@ -29,10 +29,7 @@ type player_type =  {
 module Player : (Entity with type t = player_type)  = struct
   type t =  player_type
   let update t f = f t
-  let draw t = draw_image
-      (Animations.frame t.curr_anim t.curr_frame_num |> make_image)
-      (t.pos.x *. GameVars.tile_size |> int_of_float)
-      (t.pos.y *. GameVars.tile_size |> int_of_float)
+  let draw win t =  Window.draw_image win (snd t.curr_anim).(t.curr_frame_num) t.pos.x t.pos.y
 end
 
 let make_player name id = 
@@ -53,3 +50,10 @@ let make_player name id =
     state = Idle;
     unique_stats = Combat {attack = 10; defense = 10; movement_speed = 5}
   }
+
+let get_anim (player:player_type) (dir : direction) (name:string) : Animations.animation =
+  match dir with
+  | Down ->  Animations.anim_from_dir_name player.animations "down" name
+  | Up -> Animations.anim_from_dir_name player.animations "up" name
+  | Right -> Animations.anim_from_dir_name player.animations "right" name
+  | Left -> Animations.anim_from_dir_name player.animations "left" name

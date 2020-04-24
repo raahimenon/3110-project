@@ -1,30 +1,8 @@
-type image = Graphics.color array array
+type image = Sdlsurface.t
 type animation = string * image array
 
 let load_image f : image = 
-  let in_image = try open_in f with _ -> failwith (f ^ " not found") in
-  let rec read_file in_image accu : Graphics.color array list =
-    try
-      let accu2 =
-        ( 
-          input_line in_image
-          |> String.trim
-          |> String.split_on_char ' '
-          |> Array.of_list
-          |> Array.map 
-            (fun x -> String.split_on_char ',' x 
-                      |> List.map int_of_string
-                      |> function |[r;g;b;a] -> 
-                        if a <= 0 then Graphics.transp
-                        else Graphics.rgb r g b |_ -> failwith "unformatted")
-        ) :: accu in
-      read_file in_image accu2
-
-    with _ -> accu
-  in
-  match read_file in_image [] |> List.rev with
-  | [] -> [||]
-  | h::t -> h::t |> Array.of_list
+  try Sdlsurface.load_bmp f with _ -> failwith (f ^ " not found")
 
 let load_animation f name : animation = 
   let files = Sys.readdir f in
@@ -48,7 +26,7 @@ let next_frame i anim =
 
 let curr_frame i anim = (snd anim).(i)
 
-let im_to_str (im : image) : string = 
+(*let im_to_str (im : image) : string = 
   let pix_to_str (pix : Graphics.color) : string =
     if pix = Graphics.transp then "0,0,0,0"
     else 
@@ -59,12 +37,10 @@ let im_to_str (im : image) : string =
 
   let row_to_str (row : Graphics.color array) : string = 
     Array.map pix_to_str row |> Array.to_list |> String.concat " " in
-  Array.map row_to_str im |> Array.to_list |> String.concat "\n"
+  Array.map row_to_str im |> Array.to_list |> String.concat "\n"*)
 
 let size_im (im : image) : (int * int) = 
-  let h = Array.length im in
-  let w = Array.length im.(0) in
-  (w, h)
+  Sdlsurface.get_dims im
 
 let size (a : animation) : (int * int) = 
   size_im (snd a).(0)

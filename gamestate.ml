@@ -8,21 +8,24 @@ open Enemy
 
 type state =
   {
-    running: bool;
-    current_room: Room.t
+    running : bool;
+    current_room : Room.t;
+    window : Window.window;
+    input : Window.input
   }
 
-
-let player_updater (st:state) (player:Player.t) = 
+let player_updater (st : state) (player: Player.t) : Player.t = 
   let player = {player with curr_frame_num = Animations.next_frame player.curr_frame_num player.curr_anim} in
-  if not (Graphics.key_pressed ()) then player else match Graphics.read_key () with
-    |'w' -> {player with pos = {player.pos with y = player.pos.y +. 1.}}
-    |'a' -> {player with pos = {player.pos with x = player.pos.x -. 1.}}
-    |'s' -> {player with pos = {player.pos with y = player.pos.y -. 1.}}
-    |'d' -> {player with pos = {player.pos with x = player.pos.x +. 1.}}
-    |'p' -> print_endline (string_of_int player.curr_frame_num); player
-    |'q' -> exit 0
-    |_ -> player
+  if st.input = None then 
+    if player.state <> Idle then {player with curr_anim = (get_anim player player.direction "idle"); curr_frame_num = 0; state = Idle} else player
+  else match st.input |> Option.get with
+    | esc when esc = Window.esc -> exit 0
+    | q when q = Window.q -> exit 0
+    | w when w = Window.w -> {player with direction = Up; pos = {player.pos with y = player.pos.y -. 2./.tile_size}; curr_anim = (get_anim player Up "walk"); state = Move Up}
+    | a when a = Window.a -> {player with direction = Left; pos = {player.pos with x = player.pos.x -. 2./.tile_size}; curr_anim = (get_anim player Left "walk"); state = Move Left}
+    | s when s = Window.s -> {player with direction = Down; pos = {player.pos with y = player.pos.y +. 2./.tile_size}; curr_anim = (get_anim player Down "walk"); state = Move Down}
+    | d when d = Window.d -> {player with direction = Right; pos = {player.pos with x = player.pos.x +. 2./.tile_size}; curr_anim = (get_anim player Right "walk"); state = Move Right}
+    |_-> player
 
 (** [enemy_updater st enemy] returns a new [Enemy.t] which represents the
     changes to [enemy] imposed by [st]. Raises [Failure] if any adjacent enemy
@@ -99,17 +102,15 @@ let room_updater (st:state) room:Room.t =
              items = room.items |> List.map (item_updater st)}
 
 
-let rec game_loop st time = 
-  let curr_time = Unix.gettimeofday () in
-  let delta = curr_time -. time in 
-  if not st.running then () 
-  else if delta > spf then
-    let event = wait_next_event [Poll] in
-    let st = { running = not (event.key = Char.chr 27);
-               current_room = 
-                 st.current_room |> room_updater st } 
-    in
-    Graphics.clear_graph ();
-    Room.draw_room st.current_room; 
-    game_loop st curr_time
-  else game_loop st time  
+let rec game_loop st = 
+  Window.clear st.window;
+  Room.draw_room st.window st.current_room; 
+  Window.render st.window;
+  let input = Window.input_query () in
+  let st = { running = if input = None then true else not (input |> Option.get = Window.esc);
+             current_room = 
+               st.current_room |> room_updater st;
+             window = st.window;
+             input = input } in
+  Window.wait spf;
+  game_loop st

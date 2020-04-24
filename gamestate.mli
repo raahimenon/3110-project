@@ -3,6 +3,8 @@ open Graphics
 type state =
   {
     running: bool;
-    current_room: Room.t
+    current_room: Room.t;
+    window : Window.window;
+    input : Window.input
   }
-val game_loop: state -> float -> unit
+val game_loop: state -> unit

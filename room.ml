@@ -16,4 +16,4 @@ type t =
 
 let next_room t = t
 let update_room t f = {t with player = Player.update t.player f}
-let draw_room t = Player.draw t.player
+let draw_room w t = Player.draw w t.player

@@ -12,11 +12,20 @@ let default_room =
   {player = default_player; 
    enemies =[];
    items =[];
-   tiles = (Room.Floor (Animations.load_image "player.txt")) |> Array.make_matrix 2 2 }
+   tiles = (Room.Floor (Animations.load_image "./sprites/link/down/walk/link_down_walk_1.bmp")) |> Array.make_matrix 2 2 }
 
 
-let main = open_graph " 600x600"; Gamestate.game_loop 
-    {running = true; current_room= default_room} (Unix.gettimeofday ());
-  close_graph
+let main () = 
+  let window = Window.create_window "3110 Project" 320 320 in
+  let () = Window.clear window in
+  let () = Window.render window in
+  Gamestate.game_loop 
+    {running = true;
+     current_room = default_room;
+     window = window;
+     input = None
+    };
+  Window.wait 5.;
+  Window.exit_window window
 
 let () = main ()

@@ -17,3 +17,7 @@ type item_type = {
   id : entity_id;
   unique_stats : stat_type;
 }
+
+module Item : Entity with type t = item_type
+
+val make_item : name_t -> entity_id -> item_type

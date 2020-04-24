@@ -1,4 +1,7 @@
 open Player
+open Enemy
+open Item
+
 type tile = 
   | Floor of Animations.image 
   | Wall of Animations.image

@@ -22,6 +22,7 @@ type enemy_type =  {
   health : int;
   state : entity_state;
   unique_stats : stat_type;
+  logic : string;
 }
 module Enemy : Entity with type t = enemy_type
 

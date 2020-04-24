@@ -4,10 +4,11 @@ type pos_t =  {x : float; y:float}
 type size_t = int*int
 type name_t = string
 type entity_frame = Animations.image
-type entity_state = int
 type stat_type = Combat of Combat.t | Buff of Buff.t
 type entity_id = int
 type direction = |Up |Down |Left |Right
+type entity_state = Idle | Heal | Move of direction | Attack of direction
+                  | Interact of direction
 
 type player_type =  {
   animations: (Animations.animation) list;
@@ -25,7 +26,7 @@ type player_type =  {
   unique_stats : stat_type;
 }
 
-module  Player : (Entity with type t = player_type)  = struct
+module Player : (Entity with type t = player_type)  = struct
   type t =  player_type
   let update t f = f t
   let draw t = draw_image
@@ -49,6 +50,6 @@ let make_player name id =
     id = id;
     max_health = 100;
     health = 100;
-    state = 0;
+    state = Idle;
     unique_stats = Combat {attack = 10; defense = 10; movement_speed = 5}
   }

@@ -3,10 +3,11 @@ type pos_t =  {x : float; y:float}
 type size_t = int*int
 type name_t = string
 type entity_frame = Animations.image
-type entity_state = int
 type stat_type = Combat of Combat.t | Buff of Buff.t
-type entity_id = int
 type direction = |Up |Down |Left |Right
+type entity_state = Idle | Heal | Move of direction | Attack of direction
+                  | Interact of direction
+type entity_id = int
 
 type player_type =  {
   animations: Animations.animation list;

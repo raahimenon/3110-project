@@ -4,4 +4,8 @@ type buff_type = Max_health of int
                | Defense of int 
                | Movement_speed of int
 
-type t 
+type t = {
+  max_durability : int;
+  durability : int;
+  effect : buff_type list
+}

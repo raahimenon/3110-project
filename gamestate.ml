@@ -3,12 +3,14 @@ open Room
 open Player
 open Entity
 open GameVars
+open Enemy
 
 type state =
   {
     running: bool;
     current_room: Room.t
   }
+
 
 let player_updater (st:state) player:Player.t = 
   let player = {player with curr_frame_num = Animations.next_frame player.curr_frame_num player.curr_anim} in
@@ -21,6 +23,15 @@ let player_updater (st:state) player:Player.t =
     |'q' -> exit 0
     |_-> player
 
+let enemy_updater (st:state) enemy:Enemy.t = failwith "unimplemented"
+
+let item_updater (st:state) item:Item.t = failwith "unimplemented"
+
+let room_updater (st:state) room:Room.t = 
+  {room with player = room.player |> player_updater st;
+             enemies = room.enemies |> List.map (enemy_updater st);
+             items= room.items |> List.map (item_updater st)}
+
 
 let rec game_loop st time = 
   let curr_time = Unix.gettimeofday () in
@@ -30,7 +41,7 @@ let rec game_loop st time =
     let event = wait_next_event [Poll] in
     let st = { running = not (event.key = Char.chr 27);
                current_room = 
-                 update_room st.current_room (player_updater st)} 
+                 st.current_room |> room_updater st } 
     in
     Graphics.clear_graph ();
     Room.draw_room st.current_room; 

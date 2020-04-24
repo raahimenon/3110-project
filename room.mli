@@ -6,6 +6,8 @@ type tile =
 type t = 
   {
     player: Player.t;
+    enemies: Enemy.t list;
+    items: Item.t list;
     tiles: tile array array;
   }
 

@@ -14,8 +14,6 @@ type state =
     input : Window.input
   }
 
-
- raahi/convert-sdl
 let player_updater (st : state) (player: Player.t) : Player.t = 
   let player = {player with curr_frame_num = Animations.next_frame player.curr_frame_num player.curr_anim} in
   if st.input = None then 

@@ -23,6 +23,7 @@ type enemy_type =  {
   health : int;
   state : entity_state;
   unique_stats : stat_type;
+  logic : string;
 }
 
 module  Enemy : (Entity with type t = enemy_type)  = struct
@@ -47,5 +48,6 @@ let make_enemy name id =
     max_health = 100;
     health = 100;
     state = Idle;
-    unique_stats = Combat {attack = 10; defense = 10; movement_speed = 5}
+    unique_stats = Combat {attack = 10; defense = 10; movement_speed = 5};
+    logic = "";
   }

@@ -15,6 +15,7 @@ type state =
   }
 
 
+ raahi/convert-sdl
 let player_updater (st : state) (player: Player.t) : Player.t = 
   let player = {player with curr_frame_num = Animations.next_frame player.curr_frame_num player.curr_anim} in
   if st.input = None then 
@@ -28,14 +29,79 @@ let player_updater (st : state) (player: Player.t) : Player.t =
     | d when d = Window.d -> {player with direction = Right; pos = {player.pos with x = player.pos.x +. 2./.tile_size}; curr_anim = (get_anim player Right "walk"); state = Move Right}
     |_-> player
 
-let enemy_updater (st:state) enemy:Enemy.t = failwith "unimplemented"
+(** [enemy_updater st enemy] returns a new [Enemy.t] which represents the
+    changes to [enemy] imposed by [st]. Raises [Failure] if any adjacent enemy
+    or player is found to have [Buff] stats rather than [Combat] stats. *)
+let enemy_updater (st:state) (enemy:Enemy.t) : Enemy.t option =
+  let p = st.current_room.player in
+  let d = match enemy.unique_stats with
+    | Combat stats -> stats.defense
+    | other -> failwith "encountered enemy with malformed attributes"
+  in let hp_change = 
+       (* Identify nearby enemies attacking [enemy] *)
+       st.current_room.enemies |> List.filter (fun e ->
+           match e.state with
+           | Attack dir ->
+             (match dir, e.pos.x -. enemy.pos.x, e.pos.y -. enemy.pos.y with
+              | Up, 0., -1. | Down, 0., 1. | Right, -1., 0. | Left, 1., 0.
+                -> true
+              | other -> false)
+           | other -> false)
+       (* Tally damage done by enemies, accounting for defense *)
+       |> (List.fold_left (fun (prev : int) (e : Enemy.t) : int -> 
+           match e.unique_stats with
+           | Combat stats -> prev + max 0 (stats.attack - d)
+           | other -> failwith "encountered enemy with malformed attributes") 0)
 
-let item_updater (st:state) item:Item.t = failwith "unimplemented"
+  (* Add any damage done by the player *)
+  in let hp_change =
+       hp_change + 
+       (* Check if the player is trying to attack *)
+       match p.state with
+       | Attack dir ->
+         (* Check if the player is looking at this enemy *)
+         (match dir, p.pos.x -. enemy.pos.x, p.pos.y -. enemy.pos.y with
+          | Up, 0., -1. | Down, 0., 1. | Right, -1., 0. | Left, 1., 0.
+            -> (match p.unique_stats with
+                | Combat stats -> stats.attack
+                | other -> failwith "encountered player with malformed attributes")
+          | other -> 0)
+       | other -> 0
+  in
+
+  (* Get new state *)
+  (* TODO: ACTUAL LOGIC PARSING *)
+  let new_state = Idle in
+
+  (* Apply damage and new state to enemy *)
+  if (min enemy.max_health (enemy.health - hp_change) > 0)
+  then Some {
+      enemy with 
+      health = min enemy.max_health (enemy.health - hp_change);
+      state = new_state
+    }
+  else None
+
+let item_updater (st:state) (item:Item.t) =
+  let p = st.current_room.player in
+  (* Check if the item is in the inventory *)
+  match item.pos with
+  | Inventory -> item
+  | Position pos ->
+    (* Check if the player is trying to interact *)
+    (match p.state with
+     | Interact dir ->
+       (* Check if the player is looking at this item *)
+       (match dir, p.pos.x -. pos.x, p.pos.y -. pos.y with
+        | Up, 0., -1. | Down, 0., 1. | Right, -1., 0. | Left, 1., 0.
+          -> {item with pos = Inventory}
+        | other -> item)
+     | other -> item)
 
 let room_updater (st:state) room:Room.t = 
   {room with player = room.player |> player_updater st;
-             enemies = room.enemies |> List.map (enemy_updater st);
-             items= room.items |> List.map (item_updater st)}
+             enemies = room.enemies |> List.filter_map (enemy_updater st);
+             items = room.items |> List.map (item_updater st)}
 
 
 let rec game_loop st = 

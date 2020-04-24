@@ -1,4 +1,4 @@
-MODULES= gameVars room gamestate entity player animations buff combat main
+MODULES= gameVars window room gamestate entity player animations buff combat main
 OBJECTS=$(MODULES:=.cmo)
 MLIS=$(MODULES:=mli)
 MLS=$(MODULES:=ml)

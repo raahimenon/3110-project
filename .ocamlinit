@@ -1,5 +1,6 @@
 #require "oUnit";;
 #require "graphics";;
+#require "sdl2";;
 #directory "_build";;
 #load "gameVars.cmo";;
 #load "animations.cmo";;

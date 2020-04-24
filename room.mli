@@ -16,4 +16,4 @@ type t =
 
 val next_room : t -> t
 val update_room: t -> (Player.t -> Player.t) -> t
-val draw_room: t -> unit
+val draw_room: Window.window -> t -> unit

@@ -1,4 +1,4 @@
-type image = Graphics.color array array
+type image = Sdlsurface.t
 type animation = string * image array
 
 (** [load_image f] is the [image] generated from the text file [f] relative to 
@@ -29,7 +29,7 @@ val curr_frame : int -> animation -> image
 (** [im_to_str i] converts image [i] into a string formatted lke a matrix where
     position i,j is the comma delimited rgba value of the pixel, columns are 
     split by spaces, and rows by newlines *)
-val im_to_str : image -> string
+(*val im_to_str : image -> string*)
 
 (** [size_im i] is (w,h) where [w] is the width and [h] is the height of 
     image [i]*)

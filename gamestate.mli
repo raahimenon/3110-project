@@ -1,4 +1,5 @@
 open Room
+open Graphics
 type state =
   {
     running: bool;

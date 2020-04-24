@@ -10,6 +10,8 @@ let default_player = make_player "link" 0
 
 let default_room = 
   {player = default_player; 
+   enemies =[];
+   items =[];
    tiles = (Room.Floor (Animations.load_image "player.txt")) |> Array.make_matrix 2 2 }
 
 

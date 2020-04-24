@@ -1,4 +1,6 @@
 open Player
+open Enemy
+open Item
 open Graphics
 type tile = 
   | Floor of Animations.image 

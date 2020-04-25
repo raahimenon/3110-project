@@ -1,7 +1,5 @@
-open Combat
-open Buff
-open Graphics
-
+type direction = |Up |Down |Left |Right
+type pos_t =  float*float
 
 module type Entity = sig
   (*type pos_t = 
@@ -13,8 +11,10 @@ module type Entity = sig
     type entity_frame = Animations.image
     type entity_state
     type stat_type = Combat of Combat.t | Buff of Buff.t*)
+
   type t 
   val draw: Window.window -> t-> unit
+
   val update: t-> (t-> t) -> t
 end
 

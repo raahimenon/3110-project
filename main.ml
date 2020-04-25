@@ -24,8 +24,8 @@ let main () =
      current_room = default_room;
      window = window;
      input = None
-    };
-  Window.wait 5.;
+    } (Window.get_time ());
+  Window.wait 5;
   Window.exit_window window
 
 let () = main ()

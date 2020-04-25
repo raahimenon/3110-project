@@ -7,17 +7,17 @@ type entity_frame = Animations.image
 type stat_type = Combat of Combat.t | Buff of Buff.t
 type entity_id = int
 type direction = |Up |Down |Left |Right
-type entity_state = Idle | Heal | Move of direction | Attack of direction
+type entity_state = Idle | Heal | Move of Entity.direction | Attack of Entity.direction
 
 type enemy_type =  {
   animations: (Animations.animation) list;
   curr_anim: Animations.animation;
   curr_frame_num: int;
-  direction: direction;
+  direction: Entity.direction;
   size : size_t;
   name : name_t;
   frame : entity_frame;
-  pos : pos_t;
+  pos : Entity.pos_t;
   id : entity_id;
   max_health : int;
   health : int;
@@ -43,7 +43,7 @@ let make_enemy name id =
     size = Animations.load_directions name |> List.hd |> Animations.size;
     name = name;
     frame = Animations.curr_frame 0 curr_anim; 
-    pos = {x = 0.; y = 0.};
+    pos = 0.,0.;
     id = id;
     max_health = 100;
     health = 100;

@@ -1,3 +1,6 @@
+type direction = |Up |Down |Left |Right
+type pos_t =  float*float
+
 module type Entity = sig
   (*type pos_t = 
     | Coordinates of {x : int; y:int} 
@@ -11,7 +14,6 @@ module type Entity = sig
 
   type t 
   val draw: Window.window -> t-> unit
+
   val update: t-> (t-> t) -> t
 end
-
-

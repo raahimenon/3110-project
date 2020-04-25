@@ -13,17 +13,17 @@ type state =
     window : Window.window;
     input : Window.input
   }
-let round (x,y) = (int_of_float x, int_of_float y)
 
+let round (x,y) = (int_of_float x, int_of_float y)
 let subtract (a,b) (c,d) = (a-.c,b-.d)
 let print (a,b) = (string_of_float a ^ "," ^ string_of_float b)
 
 
 
 let change_state (player:Player.t) st = 
-  let int_pos = round player.pos in 
-  let (intx,inty) = int_pos in 
-  let (x,y) = player.curr_tile in 
+  (*let int_pos = round player.pos in 
+    let (intx,inty) = int_pos in 
+     let (x,y) = player.curr_tile in*) 
   match st with
   |Move dir ->
     {player with state = Move dir; direction = dir; 
@@ -42,7 +42,7 @@ let player_move (player : Player.t)  =
     |Right -> (x +. speed,y)
   end in
   {player with pos = newpos}
-(*
+
 let player_updater (st:state) (player:Player.t) = 
   let player = {player with curr_frame_num = Animations.next_frame player.curr_frame_num player.curr_anim} in
   let player = if st.input = None then player else 
@@ -56,6 +56,7 @@ let player_updater (st:state) (player:Player.t) =
         | d when d = Window.d -> change_state player (Move Right)
         |_-> player
       end in
+
   (*let int_pos = (int_of_float player.pos.x),(int_of_float player.pos.y) in 
     let (intx,inty) = int_pos in *)
   let player = 
@@ -64,11 +65,11 @@ let player_updater (st:state) (player:Player.t) =
   in 
   match player.state with 
   |Move dir -> player_move player
-  |Idle -> print_endline ("pos:" ^ print player.pos);
+  |Idle -> (*print_endline ("pos:" ^ print player.pos);*)
     player
   |_ -> print_endline "why is this happening" ; player
-*)
 
+(*
 let player_updater (st : state) (player: Player.t) : Player.t = 
   let player = {player with curr_frame_num = Animations.next_frame player.curr_frame_num player.curr_anim} in
   if st.input = None then 
@@ -83,7 +84,7 @@ let player_updater (st : state) (player: Player.t) : Player.t =
     | s when s = Window.s -> {player with direction = Down; pos = (x,y+. 2./.tile_size); curr_anim = (get_anim player Down "walk"); state = Move Down}
     | d when d = Window.d -> {player with direction = Right; pos = (x+. 2./.tile_size,y); curr_anim = (get_anim player Right "walk"); state = Move Right}
     |_-> player
-
+*)
 (** [enemy_updater st enemy] returns a new [Enemy.t] which represents the
     changes to [enemy] imposed by [st]. Raises [Failure] if any adjacent enemy
     or player is found to have [Buff] stats rather than [Combat] stats. *)

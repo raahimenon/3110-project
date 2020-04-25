@@ -7,4 +7,4 @@ type state =
     window : Window.window;
     input : Window.input
   }
-val game_loop: state -> unit
+val game_loop: state -> int -> unit

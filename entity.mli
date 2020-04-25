@@ -1,3 +1,9 @@
+type direction = |Up |Down |Left |Right
+type pos_t =  float*float
+type size_t = int*int
+type name_t = string
+type entity_frame = Animations.image
+
 module type Entity = sig
   (*type pos_t = 
     | Coordinates of {x : int; y:int} 
@@ -11,7 +17,6 @@ module type Entity = sig
 
   type t 
   val draw: Window.window -> t-> unit
+
   val update: t-> (t-> t) -> t
 end
-
-

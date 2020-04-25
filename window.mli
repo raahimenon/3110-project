@@ -40,3 +40,7 @@ val wait : float -> unit
 val input_query : unit -> input
 
 val get_renderer : window -> Sdlrender.t
+
+val get_time : unit -> int
+
+val wait : ms:int -> unit

@@ -49,8 +49,6 @@ let exit_window (win : window) : unit =
   Sdl.quit ();
   exit 0
 
-let wait (s : float) : unit = 
-  Sdltimer.delay (s *. 1000. |> int_of_float)
 
 let rec input_query () : input = 
   let rec event (found : input) = match Sdlevent.poll_event () with
@@ -60,3 +58,7 @@ let rec input_query () : input =
   event None
 
 let get_renderer w = snd w
+
+let get_time = Sdltimer.get_ticks
+
+let wait  = Sdltimer.delay

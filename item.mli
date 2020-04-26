@@ -11,6 +11,7 @@ type item_type = {
   name : Entity.name_t;
   frame : Entity.entity_frame;
   pos : pos_t;
+  curr_tile : int*int;
   id : entity_id;
   unique_stats : stat_type;
 }

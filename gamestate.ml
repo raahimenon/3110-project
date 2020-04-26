@@ -1,9 +1,9 @@
 open Room
-open Player
 open Item
 open Entity
 open GameVars
 open Enemy
+open Player
 open Vector
 
 type state =
@@ -27,6 +27,14 @@ let change_state (player:Player.t) st =
                  pos = player.pos |> floor;
                  curr_tile = player.pos |> to_int;
                  tile_destination = player.curr_tile;}
+  |Interact (dir,time) -> 
+    {player with curr_anim = (get_anim player player.direction "idle"); 
+                 curr_frame_num = 0; state = Interact (dir,time); 
+                 reach_dest = false;
+                 pos = player.pos |> floor;
+                 curr_tile = player.pos |> to_int;
+                 tile_destination = player.curr_tile;}
+
   |_-> player
 
 let check_if_pos_reached player = 
@@ -37,61 +45,53 @@ let check_if_pos_reached player =
   | Left  -> a>0.
   | Right -> a<0.
 
-let player_move (player : Player.t)  = 
-  let newpos = player.direction |> vec_of_dir |> scale_vec speed |> add player.pos 
-  in 
-  let player = {player with pos = newpos; curr_tile = to_int newpos;} in
-  if not (check_if_pos_reached player) 
-  then player else
-    {player with reach_dest = true;
-                 pos = (fun x -> print_endline ( print x); x)  
-                     (player.tile_destination |> from_int);
-                 curr_tile = player.tile_destination;}
+let collision_player tile rm = Room.entity_at_tile rm tile
 
+let player_move (player : Player.t) rm = 
+  if (collision_player player.tile_destination rm)
+  then {player with reach_dest =true; tile_destination = player.curr_tile;} 
+  else 
+    let newpos = player.direction |> vec_of_dir |> scale_vec speed |> add player.pos 
+    in 
+    let player = {player with pos = newpos; curr_tile = to_int newpos;} in
+    if not (check_if_pos_reached player) 
+    then player else
+      {player with reach_dest = true;
+                   pos = (*(fun x -> print_endline ( print x); x)  *)
+                     (player.tile_destination |> from_int);
+                   curr_tile = player.tile_destination;}
 
 let rec read_input input to_read = match input with
   |h::t -> if List.mem h to_read then Some h else read_input t to_read
   |[] -> None
 
+let dir_from_keys key = match key with 
+  | t when t = Window.w -> Up
+  | t when t =  Window.a -> Left
+  | t when t =  Window.s -> Down
+  | t when t =  Window.d -> Right
+  | _ -> failwith "unbound key input"
+
+let change_state_input player input = 
+  match (read_input input [Window.w; Window.a; Window.s; Window.d;]) with
+  | Some k -> let dir = dir_from_keys k in change_state player (Move dir)
+  | None -> begin match (read_input input [Window.e;]) with 
+      | Some k -> change_state player (Interact (player.direction,Window.get_time () ))
+      | None -> change_state player (Idle) end 
+
+
 let player_updater (st:state) (player:Player.t) = 
   let player = {player with curr_frame_num = Animations.next_frame player.curr_frame_num player.curr_anim} in
   let player = if not player.reach_dest then player else 
       begin
-        match (read_input st.input [Window.w; Window.a; Window.s; Window.d;]) with
-        | Some k when k = Window.w -> change_state player (Move Up)
-        | Some k when k = Window.a -> change_state player (Move Left)
-        | Some k when k = Window.s -> change_state player (Move Down)
-        | Some _ -> change_state player (Move Right)
-        | None -> change_state player (Idle)
+        change_state_input player st.input
       end in
-
-  (*let int_pos = (int_of_float player.pos.x),(int_of_float player.pos.y) in 
-    let (intx,inty) = int_pos in *)
-  (*let player = 
-    if (player.state <> Idle)&&(st.input = None) then change_state player Idle 
-    else player
-    in *)
   match player.state with 
-  |Move dir -> player_move player
+  |Move dir -> player_move player st.current_room
   |Idle -> player
+  |Interact (dir, time) -> if (Window.get_time () - time) > 500 then {player with reach_dest =true } else player
   |_ -> print_endline "why is this happening" ; player
 
-(*
-let player_updater (st : state) (player: Player.t) : Player.t = 
-  let player = {player with curr_frame_num = Animations.next_frame player.curr_frame_num player.curr_anim} in
-  if st.input = None then 
-    if player.state <> Idle then {player with curr_anim = (get_anim player player.direction "idle"); curr_frame_num = 0; state = Idle} else player
-  else 
-    let (x,y) = player.pos in 
-    match st.input |> Option.get with
-    | esc when esc = Window.esc -> exit 0
-    | q when q = Window.q -> exit 0
-    | w when w = Window.w -> {player with direction = Up; pos = (x,y -. 2./.tile_size); curr_anim = (get_anim player Up "walk"); state = Move Up}
-    | a when a = Window.a -> {player with direction = Left; pos = (x-. 2./.tile_size,y); curr_anim = (get_anim player Left "walk"); state = Move Left}
-    | s when s = Window.s -> {player with direction = Down; pos = (x,y+. 2./.tile_size); curr_anim = (get_anim player Down "walk"); state = Move Down}
-    | d when d = Window.d -> {player with direction = Right; pos = (x+. 2./.tile_size,y); curr_anim = (get_anim player Right "walk"); state = Move Right}
-    |_-> player
-*)
 (** [enemy_updater st enemy] returns a new [Enemy.t] which represents the
     changes to [enemy] imposed by [st]. Raises [Failure] if any adjacent enemy
     or player is found to have [Buff] stats rather than [Combat] stats. *)
@@ -102,7 +102,7 @@ let enemy_updater (st:state) (enemy:Enemy.t) : Enemy.t option =
     | other -> failwith "encountered enemy with malformed attributes"
   in let hp_change = 
        (* Identify nearby enemies attacking [enemy] *)
-       st.current_room.enemies |> List.filter (fun e ->
+       st.current_room.enemies |> List.filter (fun (e:Enemy.t) ->
            match e.state with
            | Attack dir ->
              (match dir, Vector.subtract e.pos enemy.pos  with
@@ -135,13 +135,12 @@ let enemy_updater (st:state) (enemy:Enemy.t) : Enemy.t option =
   (* Get new state *)
   (* TODO: ACTUAL LOGIC PARSING *)
   let new_state = Idle in
-
   (* Apply damage and new state to enemy *)
   if (min enemy.max_health (enemy.health - hp_change) > 0)
   then Some {
       enemy with 
       health = min enemy.max_health (enemy.health - hp_change);
-      state = new_state
+      state = Idle
     }
   else None
 
@@ -150,16 +149,17 @@ let item_updater (st:state) (item:Item.t) =
   (* Check if the item is in the inventory *)
   match item.pos with
   | Inventory -> item
-  | Position pos ->
+  | Position {x;y} ->
     (* Check if the player is trying to interact *)
     (match p.state with
-     | Interact dir ->
+     | Interact (dir,_) 
        (* Check if the player is looking at this item *)
-       let (x,y) = p.pos in 
+       when (Vector.vec_of_dir dir) = subtract (x,y) p.pos -> {item with pos = Inventory}
+
+     (*) let (x,y) = p.pos in 
        (match dir, x -. pos.x, y -. pos.y with
-        | Up, 0., -1. | Down, 0., 1. | Right, -1., 0. | Left, 1., 0.
-          -> {item with pos = Inventory}
-        | other -> item)
+       | Up, 0., -1. | Down, 0., 1. | Right, -1., 0. | Left, 1., 0.
+         -> *)
      | other -> item)
 
 let room_updater (st:state) room:Room.t = 

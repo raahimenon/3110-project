@@ -43,3 +43,8 @@ val scale_vec : float -> t -> t
 (** [add x y] is the float vector that is formed when [x] and [y] are 
     subtracted, with subtraction taking place componentwise.*)
 val subtract : t -> t -> t
+
+
+(** [center x y] is the float vector that represents the position of [y] when 
+    centered with respect to vector [x] and the middle of the screen.*)
+val center : t -> t -> t

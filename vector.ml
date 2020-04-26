@@ -1,4 +1,5 @@
 open Entity
+open GameVars 
 
 type t = float * float
 
@@ -27,3 +28,6 @@ let vec_of_dir = function
 let scale_vec sc (a,b)= (a*.sc,b*.sc) 
 
 let subtract x y = add x (scale_vec (-1.) y)
+
+let center player_pos pos =
+  (subtract pos player_pos) |> add (GameVars.hrad,GameVars.vrad)

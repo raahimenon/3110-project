@@ -1,7 +1,7 @@
 open Entity
 type stat_type = Combat of Combat.t | Buff of Buff.t
 type entity_id = int
-type entity_state = Idle | Heal | Move of direction | Attack of direction
+type enemy_state = Idle | Heal | Move of direction | Attack of direction
 
 type enemy_type =  {
   animations: Animations.animation list;
@@ -12,10 +12,11 @@ type enemy_type =  {
   name : Entity.name_t;
   frame : Entity.entity_frame;
   pos : Entity.pos_t;
+  curr_tile : int*int;
   id : entity_id;
   max_health : int;
   health : int;
-  state : entity_state;
+  state : enemy_state;
   unique_stats : stat_type;
   logic : string;
 }

@@ -1,7 +1,7 @@
 open Entity
 type stat_type = Combat of Combat.t | Buff of Buff.t
-type entity_state = Idle | Heal | Move of direction | Attack of direction
-                  | Interact of direction
+type player_state = Idle | Heal | Move of direction | Attack of direction
+                  | Interact of direction*int
 type entity_id = int
 
 type player_type =  {
@@ -19,7 +19,7 @@ type player_type =  {
   id : entity_id;
   max_health : int;
   health : int;
-  state : entity_state;
+  state : player_state;
   unique_stats : stat_type;
 }
 module Player : Entity with type t = player_type

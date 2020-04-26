@@ -7,6 +7,7 @@ let w = Sdlkeycode.W
 let a = Sdlkeycode.A
 let s = Sdlkeycode.S
 let d = Sdlkeycode.D
+let e = Sdlkeycode.E
 let enter = Sdlkeycode.Return
 let space = Sdlkeycode.Space
 

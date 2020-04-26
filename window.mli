@@ -11,6 +11,7 @@ val w : Sdlkeycode.t
 val a : Sdlkeycode.t
 val s : Sdlkeycode.t
 val d : Sdlkeycode.t
+val e : Sdlkeycode.t
 val enter : Sdlkeycode.t
 val space : Sdlkeycode.t
 

@@ -1,5 +1,5 @@
 open Entity
-
+open Vector
 type pos_t =  Inventory | Position of {x : float; y:float} 
 type stat_type = Combat of Combat.t | Buff of Buff.t
 type entity_id = int
@@ -12,6 +12,7 @@ type item_type = {
   name : Entity.name_t;
   frame : Entity.entity_frame;
   pos : pos_t;
+  curr_tile : int*int;
   id : entity_id;
   unique_stats : stat_type;
 }
@@ -19,12 +20,10 @@ type item_type = {
 module Item : (Entity with type t = item_type)  = struct
   type t =  item_type
   let update t f = f t
-  let draw w t = 
-    let pos = match t.pos with
-      | Inventory -> failwith "cannot draw inventory item"
-      | Position record -> [|record.x; record.y|]
-    in
-    ()
+  let draw win center t = match t.pos with
+    | Inventory -> ()
+    | Position {x;y} -> let (x_draw,y_draw) = Vector.center center (x,y) in 
+      Window.draw_image win (snd t.curr_anim).(t.curr_frame_num) x_draw y_draw
 end
 
 let make_item name id (win: Window.window)= 
@@ -37,7 +36,8 @@ let make_item name id (win: Window.window)=
     size = animations |> List.hd |> Animations.size;
     name = name;
     frame = Animations.curr_frame 0 curr_anim; 
-    pos = Position {x = 0.; y = 0.};
+    pos = Position {x = 2.; y = 3.};
+    curr_tile = (2,3);
     id = id;
     unique_stats = Buff {
         max_durability = 1;

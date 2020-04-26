@@ -35,10 +35,9 @@ let clear_white (win : window) : unit =
 let draw_image (win : window) (im : Animations.image) (x : float) (y : float) =
   let x = x *. (GameVars.tile_size) |> int_of_float in
   let y = y *. (GameVars.tile_size) |> int_of_float in
-  let w, h = Animations.size_im im in
+  let w, h, texture = im in
   let dst_rect = 
     Sdlrect.make4 x y w h in
-  let texture = Sdltexture.create_from_surface (snd win) im in
   Sdlrender.copy (snd win) ~texture ~dst_rect ()
 
 let render (win : window) : unit = 

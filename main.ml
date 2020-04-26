@@ -5,13 +5,14 @@ open Gamestate
 open Animations
 open Combat
 
-let default_player = make_player "link" 0
-
-let default_room = Load.load "test_save.json"
-
 
 let main () = 
   let window = Window.create_window "3110 Project" (GameVars.width * (int_of_float GameVars.tile_size)) (GameVars.height * (int_of_float GameVars.tile_size)) in
+
+  let default_player = make_player "link" 0 window in
+
+  let default_room = Load.load "test_save.json" window in
+
   let () = Window.clear window in
   let () = Window.render window in
   Gamestate.game_loop 

@@ -1,23 +1,23 @@
-type image = Sdlsurface.t
+type image = int * int * Sdltexture.t
 type animation = string * image array
 
 (** [load_image f] is the [image] generated from the text file [f] relative to 
     the current filepath. [f] must be formatted like a matrix where position
     i,j is the comma delimited rgba value of the pixel, columns are split by
     spaces and rows by newlines*)
-val load_image : string -> image
+val load_image : string -> Sdlrender.t -> image
 
 (** [load_animation f n] is the [animation] with name [n] generated from the 
     images stored in folder [f] relative to the current filepath *)
-val load_animation : string -> string -> animation
+val load_animation : string -> string -> Sdlrender.t -> animation
 
 (** [load_direction f d] is the [animation list] generated from the animations
     stored in folder [f] with direction [d] relative to the current filepath *)
-val load_direction : string -> string -> animation list
+val load_direction : string -> string -> Sdlrender.t -> animation list
 
 (** [load_directions o] is the [animation list] generated from the animations 
     of object with name [o] *)
-val load_directions : string -> animation list
+val load_directions : string -> Sdlrender.t -> animation list
 
 (** [next_frame i a] is the next frame index next image in animation [a] given 
     that it is currently on frame number [i] (assuming the animation loops) *)

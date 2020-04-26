@@ -31,15 +31,15 @@ module Player : (Entity with type t = player_type)  = struct
   let draw win t =  Window.draw_image win (snd t.curr_anim).(t.curr_frame_num) GameVars.hrad GameVars.vrad
 end
 
-let make_player name id = 
-  let animations = Animations.load_directions name in
+let make_player name id (win : Window.window)= 
+  let animations = Animations.load_directions name (Window.get_renderer win) in
   let curr_anim = Animations.anim_from_dir_name animations "down" "idle" in
   {
     animations = animations;
     curr_anim = curr_anim;
     curr_frame_num = 0;
     direction = Down;
-    size = Animations.load_directions name |> List.hd |> Animations.size;
+    size = animations |> List.hd |> Animations.size;
     name = name;
     frame = Animations.curr_frame 0 curr_anim; 
     pos = 1.,1.;

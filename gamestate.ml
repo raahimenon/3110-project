@@ -25,7 +25,7 @@ let change_state (player:Player.t) st =
     let (intx,inty) = int_pos in 
      let (x,y) = player.curr_tile in*) 
   match st with
-  |Move dir ->
+  |Move dir -> 
     {player with state = Move dir; direction = dir; 
                  curr_anim = (get_anim player dir "walk");}
   |Idle -> 
@@ -48,24 +48,28 @@ let player_updater (st:state) (player:Player.t) =
   let player = if st.input = None then player else 
       begin
         match st.input |> Option.get with
-        | esc when esc = Window.esc -> exit 0
-        | q when q = Window.q -> exit 0
-        | w when w = Window.w -> change_state player (Move Up)
-        | a when a = Window.a -> change_state player (Move Left)
-        | s when s = Window.s -> change_state player (Move Down)
-        | d when d = Window.d -> change_state player (Move Right)
+        | esc,1 when esc = Window.esc -> exit 0
+        | q,1 when q = Window.q -> exit 0
+        | w,1 when w = Window.w -> change_state player (Move Up)
+        | a,1 when a = Window.a -> change_state player (Move Left)
+        | s,1 when s = Window.s -> change_state player (Move Down)
+        | d,1 when d = Window.d -> change_state player (Move Right)
+        | w,0 when w = Window.w -> change_state player (Idle)
+        | a,0 when a = Window.a -> change_state player (Idle)
+        | s,0 when s = Window.s -> change_state player (Idle)
+        | d,0 when d = Window.d -> change_state player (Idle)
         |_-> player
       end in
 
   (*let int_pos = (int_of_float player.pos.x),(int_of_float player.pos.y) in 
     let (intx,inty) = int_pos in *)
-  let player = 
+  (*let player = 
     if (player.state <> Idle)&&(st.input = None) then change_state player Idle 
     else player
-  in 
+    in *)
   match player.state with 
   |Move dir -> player_move player
-  |Idle -> (*print_endline ("pos:" ^ print player.pos);*)
+  |Idle -> 
     player
   |_ -> print_endline "why is this happening" ; player
 
@@ -172,7 +176,7 @@ let rec game_loop st time =
   Room.draw_room st.window st.current_room; 
   Window.render st.window;
   let input = Window.input_query () in
-  let st = { running = if input = None then true else not (input |> Option.get = Window.esc);
+  let st = { running = if input = None then true else not (input |> Option.get = (Window.esc,1));
              current_room = 
                st.current_room |> room_updater st;
              window = st.window;

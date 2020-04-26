@@ -2,7 +2,7 @@ type window
 (** To check if an input is a value, check if it is equal to 
     [Sdlkeycode.<Key>], where <Key> is a representation of the key you want 
     (make sure that it is capitalized) *)
-type input = Sdlkeycode.t option
+type input = (Sdlkeycode.t * int) option
 
 (** Some common key codes*)
 val q : Sdlkeycode.t

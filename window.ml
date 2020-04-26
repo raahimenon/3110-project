@@ -1,5 +1,5 @@
 type window = Sdlwindow.t * Sdlrender.t
-type input = Sdlkeycode.t option
+type input = (Sdlkeycode.t * int) option
 
 let q = Sdlkeycode.Q
 let esc = Sdlkeycode.Escape
@@ -53,7 +53,8 @@ let exit_window (win : window) : unit =
 let rec input_query () : input = 
   let rec event (found : input) = match Sdlevent.poll_event () with
     | None -> found
-    | Some (KeyDown({keycode = k})) -> (if found = None then event (Some k) else event found)
+    | Some (KeyDown({keycode = k;})) -> (*(if found = None then*) event (Some (k,1))(*else event found)*)
+    | Some (KeyUp({keycode = k;}))-> event (Some (k,0))
     | Some ev -> event found in
   event None
 

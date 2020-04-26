@@ -16,6 +16,8 @@ type player_type =  {
   frame : Entity.entity_frame;
   pos : Entity.pos_t;
   curr_tile : int*int;
+  tile_destination:int*int;
+  reach_dest : bool;
   id : entity_id;
   max_health : int;
   health : int;
@@ -44,7 +46,8 @@ let make_player name id =
     pos = 0.,0.;
     id = id;
     curr_tile = 0,0;
-
+    tile_destination = 0,0;
+    reach_dest = true;
     max_health = 100;
     health = 100;
     state = Idle;

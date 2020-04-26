@@ -23,7 +23,7 @@ let main () =
     {running = true;
      current_room = default_room;
      window = window;
-     input = None
+     input = [];
     } (Window.get_time ());
   Window.wait 5;
   Window.exit_window window

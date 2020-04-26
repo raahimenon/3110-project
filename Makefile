@@ -1,22 +1,22 @@
-MODULES= gameVars window room gamestate entity player animations buff combat main
+MODULES= gameVars window room gamestate entity player animations buff combat main vector
 OBJECTS=$(MODULES:=.cmo)
 MLIS=$(MODULES:=mli)
 MLS=$(MODULES:=ml)
 TEST=test.byte
 MAIN=main.byte
-OCAMLBUILD=ocamlbuild -use-ocamlfind
+OCAMLBUILD=ocamlbuild -use-ocamlfind 
 
 default: build
 	utop
 
 build:
-	$(OCAMLBUILD) $(OBJECTS)
+	$(OCAMLBUILD) -tag 'debug' $(OBJECTS)
 
 test:
 	$(OCAMLBUILD) -tag 'debug' $(TEST) && ./$(TEST)
 
 play:
-	$(OCAMLBUILD) $(MAIN) && ./$(MAIN)
+	$(OCAMLBUILD) -tag 'debug' $(MAIN) && ./$(MAIN)
 
 clean:
 	ocamlbuild -clean

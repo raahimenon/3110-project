@@ -1,5 +1,5 @@
 type window = Sdlwindow.t * Sdlrender.t
-type input = (Sdlkeycode.t * int) option
+type input = Sdlkeycode.t list(*(Sdlkeycode.t * int) option*)
 
 let q = Sdlkeycode.Q
 let esc = Sdlkeycode.Escape
@@ -49,14 +49,17 @@ let exit_window (win : window) : unit =
   Sdl.quit ();
   exit 0
 
+let rec remove elt lst = match lst with 
+  | h :: t -> if elt = h then t else h :: remove elt t
+  | [] -> []
 
-let rec input_query () : input = 
+let rec input_query lst : input = 
   let rec event (found : input) = match Sdlevent.poll_event () with
     | None -> found
-    | Some (KeyDown({keycode = k;})) -> (*(if found = None then*) event (Some (k,1))(*else event found)*)
-    | Some (KeyUp({keycode = k;}))-> event (Some (k,0))
+    | Some (KeyDown({keycode = k; }))->  event (if not (List.mem k lst) then k::lst else lst)
+    | Some (KeyUp({keycode = k; })) -> event (remove k lst)
     | Some ev -> event found in
-  event None
+  event lst
 
 let get_renderer w = snd w
 

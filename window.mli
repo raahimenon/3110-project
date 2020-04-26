@@ -2,7 +2,7 @@ type window
 (** To check if an input is a value, check if it is equal to 
     [Sdlkeycode.<Key>], where <Key> is a representation of the key you want 
     (make sure that it is capitalized) *)
-type input = (Sdlkeycode.t * int) option
+type input = Sdlkeycode.t list(*(Sdlkeycode.t * int) option*)
 
 (** Some common key codes*)
 val q : Sdlkeycode.t
@@ -37,10 +37,10 @@ val exit_window : window -> unit
 val wait : float -> unit
 
 (** [input_state] checks if there are any keys to be read at the moment *)
-val input_query : unit -> input
+val input_query : input -> input
 
 val get_renderer : window -> Sdlrender.t
 
 val get_time : unit -> int
 
-val wait : ms:int -> unit
+val wait : ms: int -> unit

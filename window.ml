@@ -24,12 +24,12 @@ let create_window (name : string) (width : int) (height : int) : window =
 let clear (win : window) : unit =
   let w,h = Sdlwindow.get_size (fst win) in
   Sdlrender.clear (snd win);
-  Sdlrender.set_draw_color (snd win) (255,255,255) 0;
+  Sdlrender.set_draw_color (snd win) (0, 0, 0) 0;
   Sdlrender.fill_rect (snd win) (Sdlrect.make4 0 0 w h)
 
-let clear_black (win : window) : unit = 
+let clear_white (win : window) : unit = 
   let w,h = Sdlwindow.get_size (fst win) in
-  Sdlrender.set_draw_color (snd win) (0,0,0) 0;
+  Sdlrender.set_draw_color (snd win) (255, 255, 255) 0;
   Sdlrender.fill_rect (snd win) (Sdlrect.make4 0 0 w h)
 
 let draw_image (win : window) (im : Animations.image) (x : float) (y : float) =

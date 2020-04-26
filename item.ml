@@ -1,5 +1,5 @@
 open Entity
-open Graphics
+
 type pos_t =  Inventory | Position of {x : float; y:float} 
 type stat_type = Combat of Combat.t | Buff of Buff.t
 type entity_id = int

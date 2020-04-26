@@ -1,4 +1,3 @@
-open Graphics
 open Room
 open Player
 open Item

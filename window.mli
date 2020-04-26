@@ -21,7 +21,7 @@ val create_window : string -> int -> int -> window
 (** [clear w] clears the draw buffer for window [w] *)
 val clear : window -> unit
 
-val clear_black : window -> unit
+val clear_white : window -> unit
 
 (** [draw_image w i x y] draws image [i] to the buffer for window [w] at 
     position (x,y) in tiled coordinates with a scale factor of GameVars.scale *)

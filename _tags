@@ -1,1 +1,1 @@
-true: package(oUnit),package(graphics),package(sdl2),thread
+true: package(oUnit),package(sdl2),package(yojson),thread

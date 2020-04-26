@@ -16,7 +16,7 @@ module type Entity = sig
     type stat_type = Combat of Combat.t | Buff of Buff.t*)
 
   type t 
-  val draw: Window.window -> t-> unit
+  val draw: Window.window -> pos_t -> t -> unit
 
   val update: t-> (t-> t) -> t
 end

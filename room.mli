@@ -17,3 +17,5 @@ type t =
 val next_room : t -> t
 val update_room: t -> (Player.t -> Player.t) -> t
 val draw_room: Window.window -> t -> unit
+
+val entity_at_tile : t -> int*int -> bool

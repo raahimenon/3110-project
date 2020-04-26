@@ -3,7 +3,7 @@ open Entity
 type stat_type = Combat of Combat.t | Buff of Buff.t
 type entity_id = int
 type direction = |Up |Down |Left |Right
-type entity_state = Idle | Heal | Move of Entity.direction | Attack of Entity.direction
+type enemy_state = Idle | Heal | Move of Entity.direction | Attack of Entity.direction
 
 type enemy_type =  {
   animations: (Animations.animation) list;
@@ -14,10 +14,11 @@ type enemy_type =  {
   name : Entity.name_t;
   frame : Entity.entity_frame;
   pos : Entity.pos_t;
+  curr_tile : int*int;
   id : entity_id;
   max_health : int;
   health : int;
-  state : entity_state;
+  state : enemy_state;
   unique_stats : stat_type;
   logic : string;
 }
@@ -25,7 +26,7 @@ type enemy_type =  {
 module  Enemy : (Entity with type t = enemy_type)  = struct
   type t =  enemy_type
   let update t f = f t
-  let draw w t = ()
+  let draw w center t = ()
 end
 
 let make_enemy name id (win : Window.window) = 
@@ -40,6 +41,7 @@ let make_enemy name id (win : Window.window) =
     name = name;
     frame = Animations.curr_frame 0 curr_anim; 
     pos = 0.,0.;
+    curr_tile =(0,0);
     id = id;
     max_health = 100;
     health = 100;

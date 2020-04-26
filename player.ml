@@ -3,8 +3,8 @@ open Entity
 type stat_type = Combat of Combat.t | Buff of Buff.t
 type entity_id = int
 type direction = |Up |Down |Left |Right
-type entity_state = Idle | Heal | Move of Entity.direction | Attack of Entity.direction
-                  | Interact of Entity.direction
+type player_state = Idle | Heal | Move of Entity.direction | Attack of Entity.direction
+                  | Interact of Entity.direction*int
 
 type player_type =  {
   animations: (Animations.animation) list;
@@ -21,14 +21,16 @@ type player_type =  {
   id : entity_id;
   max_health : int;
   health : int;
-  state : entity_state;
+  state : player_state;
   unique_stats : stat_type;
 }
 
 module Player : (Entity with type t = player_type)  = struct
   type t =  player_type
   let update t f = f t
-  let draw win t =  Window.draw_image win (snd t.curr_anim).(t.curr_frame_num) GameVars.hrad GameVars.vrad
+  let draw win center t =  
+    let (x_draw,y_draw) = Vector.center center t.pos in 
+    Window.draw_image win (snd t.curr_anim).(t.curr_frame_num) x_draw y_draw
 end
 
 let make_player name id (win : Window.window)= 

@@ -14,6 +14,8 @@ type player_type =  {
   frame : Entity.entity_frame;
   pos : Entity.pos_t;
   curr_tile : int*int;
+  tile_destination : int*int;
+  reach_dest : bool;
   id : entity_id;
   max_health : int;
   health : int;

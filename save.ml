@@ -65,4 +65,5 @@ let save (r : Room.t) (name : string) : unit =
 
   (* Write save to [name] in [saves] *)
   |> Stdlib.open_out
-  |> (fun channel -> Stdlib.output_string channel (room_json r))
+  |> (fun channel ->
+      Stdlib.output_string channel (room_json r);Stdlib.flush channel)

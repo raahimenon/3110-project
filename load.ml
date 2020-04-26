@@ -1,18 +1,18 @@
 open Yojson.Basic.Util
 
-let room_from_seed (s : int) = 
-  let default_tiles = (Room.Floor (Animations.load_image "./sprites/room/floor.bmp")) |> Array.make_matrix 11 11 in
-  Array.fill default_tiles.(0) 0 11 (Room.Wall (Animations.load_image "./sprites/room/wall.bmp"));
-  Array.fill default_tiles.(10) 0 11 (Room.Wall (Animations.load_image "./sprites/room/wall.bmp"));
+let room_from_seed (s : int) win = 
+  let default_tiles = (Room.Floor (Animations.load_image "./sprites/room/floor.bmp" (Window.get_renderer win))) |> Array.make_matrix 11 11 in
+  Array.fill default_tiles.(0) 0 11 (Room.Wall (Animations.load_image "./sprites/room/wall.bmp" (Window.get_renderer win)));
+  Array.fill default_tiles.(10) 0 11 (Room.Wall (Animations.load_image "./sprites/room/wall.bmp" (Window.get_renderer win)));
   Room.({
-      player = Player.make_player "link" 0; 
+      player = Player.make_player "link" 0 win; 
       enemies =[];
       items =[];
       tiles = default_tiles
     })
 
-let entity_from_seed_id (s : int) (id : int) = 
-  Item.make_item "item"
+let entity_from_seed_id (s : int) (id : int) (win : Window.window) = 
+  Item.make_item "item" id win
 
 let rec room_from_entities (rm : Room.t) (entities : (int * int * int * int) list) : Room.t =
   match entities with
@@ -24,10 +24,10 @@ let rec room_from_entities (rm : Room.t) (entities : (int * int * int * int) lis
       else rm in
     room_from_entities next_room t
 
-let load s =
+let load s win =
   let json = Yojson.Basic.from_file ("./saves/"^s) in
   let seed = member "seed" json |> to_int in
-  let room = room_from_seed seed in
+  let room = room_from_seed seed win in
   let entities = 
     member "entities" json 
     |> to_list 

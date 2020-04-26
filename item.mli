@@ -17,4 +17,4 @@ type item_type = {
 
 module Item : Entity with type t = item_type
 
-val make_item : name_t -> entity_id -> item_type
+val make_item : name_t -> entity_id -> Window.window -> item_type

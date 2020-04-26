@@ -1,23 +1,27 @@
-type image = Sdlsurface.t
+type image = int * int * Sdltexture.t
 type animation = string * image array
 
-let load_image f : image = 
-  try Sdlsurface.load_bmp f with _ -> failwith (f ^ " not found")
+let load_image f rndr: image = 
+  try 
+    let surf = Sdlsurface.load_bmp f in 
+    let w,h = Sdlsurface.get_dims surf in 
+    w,h,Sdltexture.create_from_surface rndr surf
+  with _ -> failwith (f ^ " not found")
 
-let load_animation f name : animation = 
+let load_animation f name rndr : animation = 
   let files = Sys.readdir f in
-  name, Array.map (fun file -> load_image (f^"/"^file)) files
+  name, Array.map (fun file -> load_image (f^"/"^file) rndr) files
 
-let load_direction f d : animation list = 
+let load_direction f d rndr : animation list = 
   let animations = Sys.readdir f |> Array.to_list in
-  List.map (fun anim -> load_animation (f^anim) (d^"*"^anim)) animations
+  List.map (fun anim -> load_animation (f^anim) (d^"*"^anim) rndr) animations
 
-let load_directions o : animation list = 
+let load_directions o rndr: animation list = 
   let o = "./sprites/"^o^"/" in
-  let up = try load_direction (o^"up/") "up" with e -> [] in
-  let down = try load_direction (o^"down/") "down" with e -> [] in
-  let right = try load_direction (o^"right/") "right" with e -> [] in
-  let left = try load_direction (o^"left/") "left" with e -> [] in
+  let up = try load_direction (o^"up/") "up" rndr with e -> [] in
+  let down = try load_direction (o^"down/") "down" rndr with e -> [] in
+  let right = try load_direction (o^"right/") "right" rndr with e -> [] in
+  let left = try load_direction (o^"left/") "left" rndr with e -> [] in
   down @ up @ left @ right
 
 let next_frame i anim = 
@@ -40,7 +44,7 @@ let curr_frame i anim = (snd anim).(i)
   Array.map row_to_str im |> Array.to_list |> String.concat "\n"*)
 
 let size_im (im : image) : (int * int) = 
-  Sdlsurface.get_dims im
+  let w,h,_ = im in w,h
 
 let size (a : animation) : (int * int) = 
   size_im (snd a).(0)

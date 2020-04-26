@@ -27,14 +27,14 @@ module Item : (Entity with type t = item_type)  = struct
     ()
 end
 
-let make_item name id = 
-  let animations = Animations.load_directions name in
+let make_item name id (win: Window.window)= 
+  let animations = Animations.load_directions name (Window.get_renderer win) in
   let curr_anim = Animations.anim_from_dir_name animations "down" "idle" in
   {
     animations = animations;
     curr_anim = curr_anim;
     curr_frame_num = 0;
-    size = Animations.load_directions name |> List.hd |> Animations.size;
+    size = animations |> List.hd |> Animations.size;
     name = name;
     frame = Animations.curr_frame 0 curr_anim; 
     pos = Position {x = 0.; y = 0.};

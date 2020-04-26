@@ -1,5 +1,5 @@
 open Entity
-open Graphics
+
 type stat_type = Combat of Combat.t | Buff of Buff.t
 type entity_id = int
 type direction = |Up |Down |Left |Right

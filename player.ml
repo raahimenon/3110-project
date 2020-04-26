@@ -1,5 +1,5 @@
 open Entity
-open Graphics
+
 type stat_type = Combat of Combat.t | Buff of Buff.t
 type entity_id = int
 type direction = |Up |Down |Left |Right
@@ -16,18 +16,19 @@ type player_type =  {
   frame : Entity.entity_frame;
   pos : Entity.pos_t;
   curr_tile : int*int;
+  tile_destination:int*int;
+  reach_dest : bool;
   id : entity_id;
   max_health : int;
   health : int;
   state : entity_state;
   unique_stats : stat_type;
 }
-let left (a,_) = a
-let right (_,b) = b
+
 module Player : (Entity with type t = player_type)  = struct
   type t =  player_type
   let update t f = f t
-  let draw win t =  Window.draw_image win (snd t.curr_anim).(t.curr_frame_num) (t.pos|>left) (t.pos|>right)
+  let draw win t =  Window.draw_image win (snd t.curr_anim).(t.curr_frame_num) GameVars.hrad GameVars.vrad
 end
 
 let make_player name id = 
@@ -41,10 +42,11 @@ let make_player name id =
     size = Animations.load_directions name |> List.hd |> Animations.size;
     name = name;
     frame = Animations.curr_frame 0 curr_anim; 
-    pos = 0.,0.;
+    pos = 1.,1.;
     id = id;
-    curr_tile = 0,0;
-
+    curr_tile = 1,1;
+    tile_destination = 0,0;
+    reach_dest = true;
     max_health = 100;
     health = 100;
     state = Idle;

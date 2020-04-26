@@ -1,5 +1,5 @@
 type window = Sdlwindow.t * Sdlrender.t
-type input = Sdlkeycode.t option
+type input = Sdlkeycode.t list(*(Sdlkeycode.t * int) option*)
 
 let q = Sdlkeycode.Q
 let esc = Sdlkeycode.Escape
@@ -24,12 +24,12 @@ let create_window (name : string) (width : int) (height : int) : window =
 let clear (win : window) : unit =
   let w,h = Sdlwindow.get_size (fst win) in
   Sdlrender.clear (snd win);
-  Sdlrender.set_draw_color (snd win) (255,255,255) 0;
+  Sdlrender.set_draw_color (snd win) (0, 0, 0) 0;
   Sdlrender.fill_rect (snd win) (Sdlrect.make4 0 0 w h)
 
-let clear_black (win : window) : unit = 
+let clear_white (win : window) : unit = 
   let w,h = Sdlwindow.get_size (fst win) in
-  Sdlrender.set_draw_color (snd win) (0,0,0) 0;
+  Sdlrender.set_draw_color (snd win) (255, 255, 255) 0;
   Sdlrender.fill_rect (snd win) (Sdlrect.make4 0 0 w h)
 
 let draw_image (win : window) (im : Animations.image) (x : float) (y : float) =
@@ -49,13 +49,17 @@ let exit_window (win : window) : unit =
   Sdl.quit ();
   exit 0
 
+let rec remove elt lst = match lst with 
+  | h :: t -> if elt = h then t else h :: remove elt t
+  | [] -> []
 
-let rec input_query () : input = 
+let rec input_query lst : input = 
   let rec event (found : input) = match Sdlevent.poll_event () with
     | None -> found
-    | Some (KeyDown({keycode = k})) -> (if found = None then event (Some k) else event found)
+    | Some (KeyDown({keycode = k; }))->  event (if not (List.mem k lst) then k::lst else lst)
+    | Some (KeyUp({keycode = k; })) -> event (remove k lst)
     | Some ev -> event found in
-  event None
+  event lst
 
 let get_renderer w = snd w
 

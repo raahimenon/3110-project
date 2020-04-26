@@ -4,3 +4,8 @@ val spf : float
 val spf_in_milli :int
 val scale : float
 val speed:float
+
+val hrad : float
+val vrad : float
+val width : int
+val height : int

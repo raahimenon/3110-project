@@ -2,8 +2,8 @@ let player_json (p : Player.Player.t) : string =
   let pos = match p.pos with (x,y) -> [|x;y|] in
   "{"
   ^"\"id\": "^Int.to_string p.id^", "
-  ^"\"x\": "^Float.to_string pos.(0)^", "
-  ^"\"y\": "^Float.to_string pos.(1)^", "
+  ^"\"x\": "^Int.to_string (int_of_float pos.(0))^", "
+  ^"\"y\": "^Int.to_string (int_of_float pos.(1))^", "
   ^"\"health\": "^Int.to_string p.health
   ^"}"
 
@@ -11,8 +11,8 @@ let enemy_json (e : Enemy.Enemy.t) : string =
   let pos = match e.pos with (x, y) -> [|x;y|] in
   "{"
   ^"\"id\": "^Int.to_string e.id^", "
-  ^"\"x\": "^Float.to_string pos.(0)^", "
-  ^"\"y\": "^Float.to_string pos.(1)^", "
+  ^"\"x\": "^Int.to_string (int_of_float pos.(0))^", "
+  ^"\"y\": "^Int.to_string (int_of_float pos.(1))^", "
   ^"\"health\": "^Int.to_string e.health
   ^"}"
 
@@ -26,8 +26,8 @@ let item_json (i : Item.Item.t) : string =
   in
   "{"
   ^"\"id\": "^Int.to_string i.id^", "
-  ^"\"x\": "^Float.to_string pos.(0)^", "
-  ^"\"y\": "^Float.to_string pos.(1)^", "
+  ^"\"x\": "^Int.to_string (int_of_float pos.(0))^", "
+  ^"\"y\": "^Int.to_string (int_of_float pos.(1))^", "
   ^"\"health\": "^Int.to_string dur
   ^"}"
 
@@ -37,9 +37,11 @@ let room_json (r : Room.t) : string =
   "{"
   ^"\"seed\": 0, "
   ^"\"entities\": ["
-  ^player_json r.player^", "
-  ^String.concat ", " (List.map enemy_json r.enemies)^", "
-  ^String.concat ", " (List.map item_json r.items)
+  ^player_json r.player^
+  (if List.length r.enemies > 0 then ", " else "")^
+  String.concat ", " (List.map enemy_json r.enemies)^
+  (if List.length r.items > 0 then ", " else "")^
+  String.concat ", " (List.map item_json r.items)
   ^"]}"
 
 (** [save name] creates a save file in the [saves] folder with name 
@@ -53,7 +55,7 @@ let save (r : Room.t) (name : string) : unit =
   |> List.exists (fun i -> (i < 48) || (i > 57 && i < 65) || (i > 90))
   |> (fun (b : bool) : string -> if b
        then failwith "[name] contains non-alphanumeric characters"
-       else name)
+       else (name^".json"))
 
   (* Check that [name] is not already being used in [saves] *)
   (* TODO: rebuild saves folder if missing *)

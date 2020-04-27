@@ -1,4 +1,4 @@
-MODULES= gameVars window room gamestate entity player animations buff combat main vector load
+MODULES= authors gameVars window room gamestate entity player animations buff combat main vector load save
 OBJECTS=$(MODULES:=.cmo)
 MLIS=$(MODULES:=mli)
 MLS=$(MODULES:=ml)
@@ -12,13 +12,14 @@ default: build
 build:
 	$(OCAMLBUILD) -tag 'debug' $(OBJECTS)
 
-test:
-	$(OCAMLBUILD) -tag 'debug' $(TEST) && ./$(TEST)
-
 play:
 	$(OCAMLBUILD) -tag 'debug' $(MAIN) && ./$(MAIN)
 
+zip: clean
+	zip -r game.zip *.ml* *.json _tags Makefile .ocamlinit .merlin sprites saves *.md INSTALLATION.md
+
 clean:
 	ocamlbuild -clean
+	rm -rf game.zip *.byte
 
 

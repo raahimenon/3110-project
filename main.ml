@@ -7,11 +7,15 @@ open Combat
 open Item
 
 let main () = 
+
+  let () = print_string "JSON File to Load in Saves Folder (If unsure, type '0.json'):"  in
+  let load_file = read_line () in
+
   let window = Window.create_window "3110 Project" (GameVars.width * (int_of_float GameVars.tile_size)) (GameVars.height * (int_of_float GameVars.tile_size)) in
 
-  let default_item = make_item "link" 0 window in
+  let default_item = make_item "blue-rupee" 1 window in
 
-  let default_room = {(Load.load "test_save.json" window)  with items =[default_item]} in
+  let default_room = {(Load.load load_file window)  with items =[default_item]} in
 
   let () = Window.clear window in
   let () = Window.render window in

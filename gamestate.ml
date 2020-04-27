@@ -6,6 +6,7 @@ open Enemy
 open Player
 open Vector
 
+(** [state] is the current game state *)
 type state =
   {
     running : bool;
@@ -14,6 +15,7 @@ type state =
     input : Window.input
   }
 
+(** [change_state p st] is the player [p] updated by the current state [st] *)
 let change_state (player:Player.t) st = 
   match st with
   |Move dir -> 
@@ -36,7 +38,8 @@ let change_state (player:Player.t) st =
                  tile_destination = player.curr_tile;}
 
   |_-> player
-
+(** [check_if_pos_reached p] checks if a moving player has reached the tile
+    they are attempting to get to (in which case they can stop moving) *)
 let check_if_pos_reached player = 
   let (a,b) = subtract (player.tile_destination |> from_int) player.pos  in 
   match player.direction with
@@ -45,8 +48,10 @@ let check_if_pos_reached player =
   | Left  -> a>0.
   | Right -> a<0.
 
+(** [collision_player t rm] checks if there is a collidable object at tile [t]*)
 let collision_player tile rm = Room.entity_at_tile rm tile
 
+(** [player_move p rm] is the player [p] in room [rm] after moving *)
 let player_move (player : Player.t) rm = 
   if (collision_player player.tile_destination rm)
   then {player with reach_dest =true; tile_destination = player.curr_tile;} 
@@ -163,7 +168,12 @@ let item_updater (st:state) (item:Item.t) =
      | other -> item)
 
 let room_updater (st:state) room:Room.t = 
-  let _ = match read_input st.input [Window.q] with |Some _ ->  exit 0 |None -> () in  
+  let _ = match read_input st.input [Window.q; Window.esc] with 
+    |Some _ -> 
+      let numsaves = Sys.readdir "saves" |> Array.length |> string_of_int in
+      Save.save room (numsaves);
+      exit 0 
+    |None -> () in  
   {room with player = room.player |> player_updater st;
              enemies = room.enemies |> List.filter_map (enemy_updater st);
              items = room.items |> List.map (item_updater st)}
@@ -180,7 +190,7 @@ let rec game_loop st time =
   Room.draw_room st.window st.current_room; 
   Window.render st.window;
   let input = Window.input_query st.input in
-  let st = { running = if not (List.mem Window.esc input) then true else false;
+  let st = { running = if not (List.mem Window.esc input) || not (List.mem Window.q input) then true else false;
              current_room = 
                st.current_room |> room_updater st;
              window = st.window;

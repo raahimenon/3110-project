@@ -30,19 +30,6 @@ let next_frame i anim =
 
 let curr_frame i anim = (snd anim).(i)
 
-(*let im_to_str (im : image) : string = 
-  let pix_to_str (pix : Graphics.color) : string =
-    if pix = Graphics.transp then "0,0,0,0"
-    else 
-      let b = pix mod (16*16) in
-      let g = (pix - b) / (16 * 16) mod (16 * 16) in
-      let r = ((pix - b) / (16 * 16) - g)/(16*16) mod (16*16) in 
-      string_of_int r ^ "," ^ string_of_int g ^ "," ^ string_of_int b ^",255" in
-
-  let row_to_str (row : Graphics.color array) : string = 
-    Array.map pix_to_str row |> Array.to_list |> String.concat " " in
-  Array.map row_to_str im |> Array.to_list |> String.concat "\n"*)
-
 let size_im (im : image) : (int * int) = 
   let w,h,_ = im in w,h
 

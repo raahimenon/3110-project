@@ -1,2 +1,2 @@
-(** [save s r] saves the contents of room [r] in file [s] if possible. *)
-val save : string -> Room.t -> unit
+(** [save r s] saves the contents of room [r] in file [s] if possible. *)
+val save : Room.t -> string -> unit

@@ -26,14 +26,14 @@ let change_state (player:Player.t) st =
   |Idle -> 
     {player with curr_anim = (get_anim player player.direction "idle"); 
                  curr_frame_num = 0; state = Idle; reach_dest = true;
-                 pos = player.pos |> floor;
+                 pos = player.pos (*|> floor*);
                  curr_tile = player.pos |> to_int;
                  tile_destination = player.curr_tile;}
   |Interact (dir,time) -> 
     {player with curr_anim = (get_anim player player.direction "idle"); 
                  curr_frame_num = 0; state = Interact (dir,time); 
                  reach_dest = false;
-                 pos = player.pos |> floor;
+                 pos = player.pos (*|> floor*);
                  curr_tile = player.pos |> to_int;
                  tile_destination = player.curr_tile;}
 
@@ -58,13 +58,14 @@ let player_move (player : Player.t) rm =
   else 
     let newpos = player.direction |> vec_of_dir |> scale_vec speed |> add player.pos 
     in 
-    let player = {player with pos = newpos; curr_tile = to_int newpos;} in
-    if not (check_if_pos_reached player) 
-    then player else
-      {player with reach_dest = true;
-                   pos = (*(fun x -> print_endline ( print x); x)  *)
-                     (player.tile_destination |> from_int);
-                   curr_tile = player.tile_destination;}
+    {player with pos = newpos; curr_tile = to_int newpos;}
+
+(*if not (check_if_pos_reached player) 
+  then player else
+  {player with reach_dest = true;
+               pos = (*(fun x -> print_endline ( print x); x)  *)
+                 (player.tile_destination |> from_int);
+               curr_tile = player.tile_destination;}*)
 
 let rec read_input input to_read = match input with
   |h::t -> if List.mem h to_read then Some h else read_input t to_read
@@ -87,10 +88,10 @@ let change_state_input player input =
 
 let player_updater (st:state) (player:Player.t) = 
   let player = {player with curr_frame_num = Animations.next_frame player.curr_frame_num player.curr_anim} in
-  let player = if not player.reach_dest then player else 
-      begin
-        change_state_input player st.input
-      end in
+  let player = (*if not player.reach_dest then player else *)
+    begin
+      change_state_input player st.input
+    end in
   match player.state with 
   |Move dir -> player_move player st.current_room
   |Idle -> player
@@ -183,8 +184,8 @@ let rec game_loop st time =
   let curr_time = Window.get_time () in
   let delta = curr_time - time in 
   let delay = spf_in_milli - delta in
-  begin if (delay) > 0 then Window.wait (delay) else print_endline ("lag" ^ string_of_int delay)
-  end;
+  begin if (delay) > 0 then Window.wait (delay) (*else print_endline ("lag" ^ string_of_int delay)
+                                                *)end;
   let curr_time = Window.get_time() in
   Window.clear st.window;
   Room.draw_room st.window st.current_room; 

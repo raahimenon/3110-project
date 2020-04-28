@@ -30,7 +30,7 @@ module Player : (Entity with type t = player_type)  = struct
   let update t f = f t
   let draw win center t =  
     let (x_draw,y_draw) = Vector.center center t.pos in 
-    Window.draw_image win (snd t.curr_anim).(t.curr_frame_num) x_draw y_draw
+    Window.draw_image win (snd t.curr_anim).(t.curr_frame_num) x_draw (y_draw)
 end
 
 let make_player name id (win : Window.window)= 

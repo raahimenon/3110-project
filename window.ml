@@ -10,6 +10,10 @@ let d = Sdlkeycode.D
 let e = Sdlkeycode.E
 let enter = Sdlkeycode.Return
 let space = Sdlkeycode.Space
+let up = Sdlkeycode.Up
+let up = Sdlkeycode.Down
+let up = Sdlkeycode.Left
+let up = Sdlkeycode.Right
 
 let create_window (name : string) (width : int) (height : int) : window = 
   let s = int_of_float GameVars.scale in
@@ -34,9 +38,9 @@ let clear_white (win : window) : unit =
   Sdlrender.fill_rect (snd win) (Sdlrect.make4 0 0 w h)
 
 let draw_image (win : window) (im : Animations.image) (x : float) (y : float) =
-  let x = x *. (GameVars.tile_size) |> int_of_float in
-  let y = y *. (GameVars.tile_size) |> int_of_float in
   let w, h, texture = im in
+  let x = x *. (GameVars.tile_size) |> int_of_float in
+  let y = (y *. (GameVars.tile_size) |> int_of_float) - (h mod int_of_float GameVars.tile_size) in
   let dst_rect = 
     Sdlrect.make4 x y w h in
   Sdlrender.copy (snd win) ~texture ~dst_rect ()

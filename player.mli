@@ -10,6 +10,7 @@ type player_type =  {
   curr_frame_num: int;
   direction: Entity.direction;
   size : Entity.size_t;
+  bounding_box : Entity.size_t;
   name : Entity.name_t;
   frame : Entity.entity_frame;
   pos : Entity.pos_t;

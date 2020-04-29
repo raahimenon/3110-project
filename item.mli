@@ -1,5 +1,5 @@
 open Entity
-type pos_t =  Inventory | Position of {x : float; y:float} 
+type pos_t =  Inventory | Position of Entity.pos_t
 type stat_type = Combat of Combat.t | Buff of Buff.t
 type entity_id = int
 
@@ -8,6 +8,7 @@ type item_type = {
   curr_anim: Animations.animation;
   curr_frame_num: int;
   size : Entity.size_t;
+  bounding_box : Entity.size_t;
   name : Entity.name_t;
   frame : Entity.entity_frame;
   pos : pos_t;

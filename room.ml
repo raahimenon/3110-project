@@ -18,13 +18,6 @@ let next_room (rm : t) = rm
 let update_room (rm : t) f = {rm with player = Player.update rm.player f}
 
 let draw_tile (win : Window.window) (rm : t) (x : int) (y : int) =
-  (*let player_x, player_y = rm.player.pos in
-    let xf = float_of_int x in
-    let yf = float_of_int y in
-    let x_off = xf -. player_x in 
-    let y_off = yf -. player_y in
-    let x_draw = x_off +. GameVars.hrad in
-    let y_draw = y_off +. GameVars.vrad in *)
   let position = (x,y) |> Vector.from_int in
   let (x_draw,y_draw) = Vector.center rm.player.pos position in
   match rm.tiles.(y).(x) with
@@ -40,3 +33,14 @@ let draw_room (win : Window.window) (rm : t) =
 let entity_at_tile rm tile = 
   List.exists (fun x -> x.curr_tile = tile && x.pos <> Inventory) rm.items
   || List.exists (fun (x:Enemy.t)-> x.curr_tile = tile) rm.enemies
+
+let scale_pos_pix pos = pos |> Vector.scale_vec 16. |> Vector.to_int
+
+let collision_with_player rm (player:Player.t) = 
+  List.exists 
+    (fun x -> match x.pos with
+       |Position pos -> Window.collision (scale_pos_pix pos) x.size 
+                          (scale_pos_pix player.pos) player.size
+       | _ -> false) rm.items
+
+(*|| List.exists (fun (x:Enemy.t)-> x.curr_tile = player.curr_tile) rm.enemies*)

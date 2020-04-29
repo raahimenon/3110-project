@@ -1,5 +1,5 @@
 open Entity
-
+open Vector
 type stat_type = Combat of Combat.t | Buff of Buff.t
 type entity_id = int
 type direction = |Up |Down |Left |Right
@@ -12,6 +12,7 @@ type player_type =  {
   curr_frame_num: int;
   direction: Entity.direction;
   size : Entity.size_t;
+  bounding_box : Entity.size_t;
   name : Entity.name_t;
   frame : Entity.entity_frame;
   pos : Entity.pos_t;
@@ -42,6 +43,7 @@ let make_player name id (win : Window.window)=
     curr_frame_num = 0;
     direction = Down;
     size = animations |> List.hd |> Animations.size;
+    bounding_box = animations |> List.hd |> Animations.size;
     name = name;
     frame = Animations.curr_frame 0 curr_anim; 
     pos = 1.,1.;

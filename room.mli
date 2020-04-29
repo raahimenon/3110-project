@@ -19,3 +19,5 @@ val update_room: t -> (Player.t -> Player.t) -> t
 val draw_room: Window.window -> t -> unit
 
 val entity_at_tile : t -> int*int -> bool
+
+val collision_with_player : t -> Player.t -> bool

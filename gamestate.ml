@@ -53,12 +53,13 @@ let collision_player tile rm = Room.entity_at_tile rm tile
 
 (** [player_move p rm] is the player [p] in room [rm] after moving *)
 let player_move (player : Player.t) rm = 
-  if (collision_player player.tile_destination rm)
-  then {player with reach_dest =true; tile_destination = player.curr_tile;} 
-  else 
-    let newpos = player.direction |> vec_of_dir |> scale_vec speed |> add player.pos 
-    in 
-    {player with pos = newpos; curr_tile = to_int newpos;}
+  (*if (collision_player player.tile_destination rm)
+    then {player with reach_dest = true; tile_destination = player.curr_tile;} 
+    else *)
+  let newpos = player.direction |> vec_of_dir |> scale_vec speed |> add player.pos 
+  in 
+  let newplayer = {player with pos = newpos; curr_tile = to_int newpos;} in 
+  if Room.collision_with_player  rm newplayer then player else newplayer
 
 (*if not (check_if_pos_reached player) 
   then player else
@@ -151,20 +152,21 @@ let enemy_updater (st:state) (enemy:Enemy.t) : Enemy.t option =
   else None
 
 let item_updater (st:state) (item:Item.t) =
+  (*let item = {item with curr_frame_num = Animations.next_frame item.curr_frame_num item.curr_anim} in*)
   let p = st.current_room.player in
   (* Check if the item is in the inventory *)
   match item.pos with
   | Inventory -> item
-  | Position {x;y} ->
+  | Position (x,y) ->
     (* Check if the player is trying to interact *)
     (match p.state with
      | Interact (dir,_) 
        (* Check if the player is looking at this item *)
-       when (Vector.vec_of_dir dir) = subtract (x,y) p.pos -> {item with pos = Inventory}
+       when Vector.greater (0.7,0.5) (((Vector.subtract (Vector.add p.pos (vec_of_dir dir)) (x,y)))|> Vector.abs) -> {item with pos = Inventory}
 
-     (*) let (x,y) = p.pos in 
-       (match dir, x -. pos.x, y -. pos.y with
-       | Up, 0., -1. | Down, 0., 1. | Right, -1., 0. | Left, 1., 0.
+     (* let (x,y) = p.pos in 
+        (match dir, x -. pos.x, y -. pos.y with
+        | Up, 0., -1. | Down, 0., 1. | Right, -1., 0. | Left, 1., 0.
          -> *)
      | other -> item)
 
@@ -184,8 +186,8 @@ let rec game_loop st time =
   let curr_time = Window.get_time () in
   let delta = curr_time - time in 
   let delay = spf_in_milli - delta in
-  begin if (delay) > 0 then Window.wait (delay) (*else print_endline ("lag" ^ string_of_int delay)
-                                                *)end;
+  begin if (delay) > 0 then Window.wait (delay) else print_endline ("lag" ^ string_of_int delay)
+  end;
   let curr_time = Window.get_time() in
   Window.clear st.window;
   Room.draw_room st.window st.current_room; 

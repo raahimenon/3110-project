@@ -1,10 +1,11 @@
-MODULES= authors gameVars window room gamestate entity player animations buff combat main vector load save
+MODULES= authors gameVars window room gamestate entity player animations buff combat main vector load save room_gen wfc_test
 OBJECTS=$(MODULES:=.cmo)
 MLIS=$(MODULES:=mli)
 MLS=$(MODULES:=ml)
 TEST=test.byte
 MAIN=main.byte
-OCAMLBUILD=ocamlbuild -use-ocamlfind 
+WFC=wfc_test.byte
+OCAMLBUILD=ocamlbuild -use-ocamlfind
 
 default: build
 	utop
@@ -21,5 +22,8 @@ zip: clean
 clean:
 	ocamlbuild -clean
 	rm -rf game.zip *.byte
+
+wfc:
+	$(OCAMLBUILD) -tag 'debug' $(WFC) && ./$(WFC)
 
 

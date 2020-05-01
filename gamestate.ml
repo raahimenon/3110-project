@@ -120,17 +120,30 @@ let player_updater (st:state) (player:Player.t) =
   let player = 
     {player with 
      curr_frame_num = Animations.next_frame player.curr_frame_num player.curr_anim;
-     inventory_slot = let next_slot = player.inventory_slot + read_mouse st.input in
-       if next_slot >= 0 && next_slot < GameVars.inventory_size then next_slot else player.inventory_slot
     } in
   let player = if not player.reach_dest then player else 
       begin
         change_state_input player st.input st
       end in
   match player.state with 
-  |Move dir -> player_move player st.current_room
-  |Idle -> player
-  |Interact (dir, time) -> if (Window.get_time () - time) > 500 then {player with reach_dest =true } else player
+  |Move dir -> player_move
+                 {player with 
+                  inventory_slot = 
+                    let next_slot = player.inventory_slot + read_mouse st.input 
+                    in if next_slot >= 0 && next_slot < GameVars.inventory_size 
+                    then next_slot else player.inventory_slot}
+                 st.current_room
+  |Idle -> {player with 
+            inventory_slot = 
+              let next_slot = player.inventory_slot + read_mouse st.input in
+              if next_slot >= 0 && next_slot < GameVars.inventory_size 
+              then next_slot else player.inventory_slot}
+  |Interact (dir, time) -> if (Window.get_time () - time) > 500 then 
+      {player with reach_dest =true;
+                   inventory_slot = 
+                     let next_slot = player.inventory_slot + read_mouse st.input in
+                     if next_slot >= 0 && next_slot < GameVars.inventory_size 
+                     then next_slot else player.inventory_slot} else player
   |Use_Item (dir, time) -> if (Window.get_time () - time) > 500 then {player with reach_dest =true } else player
   |_ -> print_endline "why is this happening" ; player
 
@@ -235,7 +248,7 @@ let draw_hud (st : state) =
   let ratio = float_of_int player.health /. (float_of_int player.max_health) in
   Window.draw_hud_box st.window st.current_room.player.inventory_slot;
   Window.draw_rect_col st.window 
-    (255. *. (1. -. ratio) |> int_of_float, 255. *. ratio |> int_of_float, 0)
+    (Window.health_col_ratio ratio)
     (float_of_int GameVars.width -. 1. -. GameVars.hud_bezel_tile,1.)
     (1., (float_of_int GameVars.height -. 2.)*.ratio);
   List.map (fun (i : Item.t) -> match i.pos with Inventory _ -> Item.draw st.window st.current_room.player.pos i |_ -> ()) st.current_room.items

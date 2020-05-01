@@ -56,3 +56,5 @@ val wait : ms: int -> unit
 val draw_hud_box : window -> int -> unit
 
 val draw_rect_col : window -> int * int * int -> float * float -> float * float -> unit
+
+val health_col_ratio : float -> int*int*int

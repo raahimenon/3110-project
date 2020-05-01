@@ -22,6 +22,8 @@ type player_type =  {
   state : player_state;
   unique_stats : stat_type;
   inventory_slot : int;
+  attack : int;
+  defence : int;
 }
 module Player : Entity with type t = player_type
 

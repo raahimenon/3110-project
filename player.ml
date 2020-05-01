@@ -24,6 +24,8 @@ type player_type =  {
   state : player_state;
   unique_stats : stat_type;
   inventory_slot : int;
+  attack: int;
+  defence: int;
 }
 
 module Player : (Entity with type t = player_type)  = struct
@@ -55,6 +57,8 @@ let make_player name id (win : Window.window)=
     state = Idle;
     unique_stats = Combat {attack = 10; defense = 10; movement_speed = 5};
     inventory_slot = 0;
+    attack = 10;
+    defence = 10;
   }
 
 let get_anim (player:player_type) (dir : Entity.direction) (name:string) : Animations.animation =

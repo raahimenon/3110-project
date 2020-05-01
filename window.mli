@@ -2,18 +2,25 @@ type window
 (** To check if an input is a value, check if it is equal to 
     [Sdlkeycode.<Key>], where <Key> is a representation of the key you want 
     (make sure that it is capitalized) *)
-type input = Sdlkeycode.t list(*(Sdlkeycode.t * int) option*)
+type input = 
+  | Key of Sdlkeycode.t
+  | MWheel of int (*(Sdlkeycode.t * int) option*)
+  | MClick of int
 
 (** Some common key codes*)
-val q : Sdlkeycode.t
-val esc : Sdlkeycode.t
-val w : Sdlkeycode.t
-val a : Sdlkeycode.t
-val s : Sdlkeycode.t
-val d : Sdlkeycode.t
-val e : Sdlkeycode.t
-val enter : Sdlkeycode.t
-val space : Sdlkeycode.t
+val q : input
+val esc : input
+val w : input
+val a : input
+val s : input
+val d : input
+val e : input
+val x : input
+val enter : input
+val space : input
+val up : input
+val lclick : input
+val rclick : input
 
 (** [create_window n w h] creates a window titled [n] with width [w] and
     height [h]*)
@@ -38,7 +45,7 @@ val exit_window : window -> unit
 val wait : float -> unit
 
 (** [input_state] checks if there are any keys to be read at the moment *)
-val input_query : input -> input
+val input_query : input list -> input list
 
 val collision : int*int -> int*int -> int*int -> int*int -> bool
 
@@ -47,3 +54,9 @@ val get_renderer : window -> Sdlrender.t
 val get_time : unit -> int
 
 val wait : ms: int -> unit
+
+val draw_hud_box : window -> int -> unit
+
+val draw_rect_col : window -> int * int * int -> float * float -> float * float -> unit
+
+val health_col_ratio : float -> int*int*int

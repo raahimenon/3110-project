@@ -1,6 +1,6 @@
 open Entity
 type stat_type = Combat of Combat.t | Buff of Buff.t
-type player_state = Idle | Heal | Move of direction | Attack of direction
+type player_state = Idle | Use_Item of direction*int| Move of direction | Attack of direction
                   | Interact of direction*int
 type entity_id = int
 
@@ -23,6 +23,10 @@ type player_type =  {
   health : int;
   state : player_state;
   unique_stats : stat_type;
+  inventory_slot : int;
+  attack : int;
+  defence : int;
+  paused : bool;
 }
 module Player : Entity with type t = player_type
 

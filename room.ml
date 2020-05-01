@@ -45,7 +45,7 @@ let check_item_collision (player:Player.t) item = match item.pos with
                      (Vector.add_ints (scale_pos_pix player.pos) player.bounding_box_pos) player.bounding_box
   | _ -> false
 
-let check_wall_collisions (player:Player.t) (tile,(x,y)) = 
+let check_wall_collisions (player:Player.t) (tile,(y,x)) = 
   (match tile with 
    | Floor _-> false 
    | _-> true ) && Window.collision 
@@ -54,13 +54,13 @@ let check_wall_collisions (player:Player.t) (tile,(x,y)) =
     player.bounding_box
 
 let rec generate_tile_with_cords rm lst = match lst with
-  |(x,y)::t -> let ar = try([rm.tiles.(x).(y),(x,y)]) with e -> [] in ar @ generate_tile_with_cords rm t 
+  |(y,x)::t -> let ar = try([rm.tiles.(y).(x),(y,x)]) with e -> [] in ar @ generate_tile_with_cords rm t 
   |[] -> []
 
 let collision_with_player rm (player:Player.t) =
   let items =  List.filter (check_item_collision player) rm.items in 
   let (x,y) = player.curr_tile in 
-  let tile_array = [(x,y); (x+1,y); (x,y+1); (x,y-1); (x-1,y)] 
+  let tile_array = [(y,x); (y,x+1); (y+1,x); (y-1,x); (y,x-1)] 
                    |> generate_tile_with_cords rm
   in 
   let tiles = List.filter (check_wall_collisions player) tile_array in 

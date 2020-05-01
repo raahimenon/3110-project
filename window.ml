@@ -72,7 +72,12 @@ let rec input_query lst : input =
   event lst
 
 let collision pos1 size1 pos2 size2 =
-  Sdlrect.has_intersection (Sdlrect.make pos1 size1) (Sdlrect.make pos2 size2)
+  (fst pos1 < fst pos2 + fst size2) &&
+  (fst pos1 + fst size1 > fst pos2) &&
+  (snd pos1 < snd pos2 + snd size2) &&
+  (snd pos1 + snd size1 > snd pos2) 
+
+(*Sdlrect.has_intersection (Sdlrect.make pos1 size1) (Sdlrect.make pos2 size2)*)
 
 
 let get_renderer w = snd w

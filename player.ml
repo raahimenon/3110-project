@@ -3,7 +3,7 @@ open Entity
 type stat_type = Combat of Combat.t | Buff of Buff.t
 type entity_id = int
 type direction = |Up |Down |Left |Right
-type player_state = Idle | Heal | Move of Entity.direction | Attack of Entity.direction
+type player_state = Idle | Use_Item of Entity.direction*int | Move of Entity.direction | Attack of Entity.direction
                   | Interact of Entity.direction*int
 
 type player_type =  {
@@ -23,6 +23,7 @@ type player_type =  {
   health : int;
   state : player_state;
   unique_stats : stat_type;
+  inventory_slot : int;
 }
 
 module Player : (Entity with type t = player_type)  = struct
@@ -52,7 +53,8 @@ let make_player name id (win : Window.window)=
     max_health = 100;
     health = 100;
     state = Idle;
-    unique_stats = Combat {attack = 10; defense = 10; movement_speed = 5}
+    unique_stats = Combat {attack = 10; defense = 10; movement_speed = 5};
+    inventory_slot = 0;
   }
 
 let get_anim (player:player_type) (dir : Entity.direction) (name:string) : Animations.animation =

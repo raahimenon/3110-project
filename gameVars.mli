@@ -9,3 +9,8 @@ val hrad : float
 val vrad : float
 val width : int
 val height : int
+
+val inventory_size : int
+
+val hud_bezel_tile : float
+val hud_bezel_px : int

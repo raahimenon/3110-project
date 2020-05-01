@@ -18,8 +18,8 @@ let enemy_json (e : Enemy.Enemy.t) : string =
 
 let item_json (i : Item.Item.t) : string =
   let pos = match i.pos with 
-    | Position {x;y} -> [|x;y|]
     | Inventory {index = i} -> [|-1.; float_of_int i|]
+    | Position (x,y) -> [|x;y|]
   in let dur = match i.unique_stats with
       | Buff {max_durability;durability;effect} -> durability
       | other -> -1

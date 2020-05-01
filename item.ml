@@ -1,6 +1,7 @@
 open Entity
 open Vector
-type pos_t =  Inventory of {index : int} | Position of {x : float; y:float} 
+
+type pos_t =  Inventory of {index : int} | Position of Entity.pos_t
 type stat_type = Combat of Combat.t | Buff of Buff.t
 type entity_id = int
 
@@ -9,6 +10,8 @@ type item_type = {
   curr_anim: Animations.animation;
   curr_frame_num: int;
   size : Entity.size_t;
+  bounding_box : Entity.size_t;
+  bounding_box_pos: Entity.size_t;
   name : Entity.name_t;
   frame : Entity.entity_frame;
   pos : pos_t;
@@ -34,7 +37,7 @@ module Item : (Entity with type t = item_type)  = struct
             (x_draw,y_draw+.1.+.1./.GameVars.tile_size)
             (1.*.ratio, 1./.GameVars.tile_size)
         | _ -> () end
-    | Position {x;y} -> let (x_draw,y_draw) = Vector.center center (x,y) in 
+    | Position (x,y) -> let (x_draw,y_draw) = Vector.center center (x,y) in
       Window.draw_image win (snd t.curr_anim).(t.curr_frame_num) x_draw y_draw
 end
 
@@ -45,10 +48,12 @@ let make_item name id (win: Window.window) x y =
     animations = animations;
     curr_anim = curr_anim;
     curr_frame_num = 0;
-    size = animations |> List.hd |> Animations.size;
+    size = animations |> List.hd |> Animations.size ;
+    bounding_box = (7,16);
+    bounding_box_pos  = (4,0);
     name = name;
     frame = Animations.curr_frame 0 curr_anim; 
-    pos = Position {x = float_of_int x; y = float_of_int y};
+    pos = Position (float_of_int x, float_of_int y);
     curr_tile = x, y;
     id = id;
     unique_stats = Buff {

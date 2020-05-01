@@ -11,6 +11,7 @@ type enemy_type =  {
   curr_frame_num: int;
   direction: Entity.direction;
   size : Entity.size_t;
+  bounding_box : Entity.size_t;
   name : Entity.name_t;
   frame : Entity.entity_frame;
   pos : Entity.pos_t;
@@ -38,6 +39,7 @@ let make_enemy name id (win : Window.window) =
     curr_frame_num = 0;
     direction = Down;
     size = animations |> List.hd |> Animations.size;
+    bounding_box = animations |> List.hd |> Animations.size;
     name = name;
     frame = Animations.curr_frame 0 curr_anim; 
     pos = 0.,0.;

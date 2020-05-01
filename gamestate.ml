@@ -36,22 +36,22 @@ let change_state (player:Player.t) pst st =
   |Idle -> 
     {player with curr_anim = (get_anim player player.direction "idle"); 
                  curr_frame_num = 0; state = Idle; reach_dest = true;
-                 pos = player.pos |> floor;
+                 pos = player.pos (*|> floor*);
                  curr_tile = player.pos |> to_int;
                  tile_destination = player.curr_tile;}
   |Interact (dir,time) -> 
     {player with curr_anim = (get_anim player player.direction "idle"); 
                  curr_frame_num = 0; state = Interact (dir,time); 
-                 reach_dest = false;
-                 pos = player.pos |> floor;
+                 paused = true;
+                 pos = player.pos (*|> floor*);
                  curr_tile = player.pos |> to_int;
                  tile_destination = player.curr_tile;}
   |Use_Item (dir, time) ->
     let player = 
       {player with curr_anim = (get_anim player player.direction "idle"); 
                    curr_frame_num = 0; state = Use_Item (dir,time); 
-                   reach_dest = false;
-                   pos = player.pos |> floor;
+                   paused = true;
+                   pos = player.pos;
                    curr_tile = player.pos |> to_int;
                    tile_destination = player.curr_tile;} in
     begin match get_item_slot st.current_room player.inventory_slot with
@@ -77,18 +77,20 @@ let collision_player tile rm = Room.entity_at_tile rm tile
 
 (** [player_move p rm] is the player [p] in room [rm] after moving *)
 let player_move (player : Player.t) rm = 
-  if (collision_player player.tile_destination rm)
-  then {player with reach_dest =true; tile_destination = player.curr_tile;} 
-  else 
-    let newpos = player.direction |> vec_of_dir |> scale_vec speed |> add player.pos 
-    in 
-    let player = {player with pos = newpos; curr_tile = to_int newpos;} in
-    if not (check_if_pos_reached player) 
-    then player else
-      {player with reach_dest = true;
-                   pos = (*(fun x -> print_endline ( print x); x)  *)
-                     (player.tile_destination |> from_int);
-                   curr_tile = player.tile_destination;}
+  (*if (collision_player player.tile_destination rm)
+    then {player with reach_dest = true; tile_destination = player.curr_tile;} 
+    else *)
+  let newpos = player.direction |> vec_of_dir |> scale_vec speed |> add player.pos 
+  in 
+  let newplayer = {player with pos = newpos; curr_tile = to_int newpos;} in 
+  if Room.collision_with_player rm newplayer <> None then player else newplayer
+
+(*if not (check_if_pos_reached player) 
+  then player else
+  {player with reach_dest = true;
+               pos = (*(fun x -> print_endline ( print x); x)  *)
+                 (player.tile_destination |> from_int);
+               curr_tile = player.tile_destination;}*)
 
 let rec read_input input to_read = match input with
   |h::t -> if List.mem h to_read then Some h else read_input t to_read
@@ -117,11 +119,9 @@ let change_state_input player input =
 
 
 let player_updater (st:state) (player:Player.t) = 
-  let player = 
-    {player with 
-     curr_frame_num = Animations.next_frame player.curr_frame_num player.curr_anim;
-    } in
-  let player = if not player.reach_dest then player else 
+
+  let player = {player with curr_frame_num = Animations.next_frame player.curr_frame_num player.curr_anim} in
+  let player = if player.paused then player else
       begin
         change_state_input player st.input st
       end in
@@ -139,12 +139,12 @@ let player_updater (st:state) (player:Player.t) =
               if next_slot >= 0 && next_slot < GameVars.inventory_size 
               then next_slot else player.inventory_slot}
   |Interact (dir, time) -> if (Window.get_time () - time) > 500 then 
-      {player with reach_dest =true;
+      {player with paused = false;
                    inventory_slot = 
                      let next_slot = player.inventory_slot + read_mouse st.input in
                      if next_slot >= 0 && next_slot < GameVars.inventory_size 
                      then next_slot else player.inventory_slot} else player
-  |Use_Item (dir, time) -> if (Window.get_time () - time) > 500 then {player with reach_dest =true } else player
+  |Use_Item (dir, time) -> if (Window.get_time () - time) > 500 then {player with paused = false } else player
   |_ -> print_endline "why is this happening" ; player
 
 (** [enemy_updater st enemy] returns a new [Enemy.t] which represents the
@@ -216,12 +216,12 @@ let item_updater (st:state) (item:Item.t) : Item.t option =
             | _ -> Some item end
         else Some item 
       | other -> Some {item with in_use = false} end
-  | Position {x;y} -> let item = {item with in_use = false} in
+  | Position (x,y) -> let item = {item with in_use = false} in
     (* Check if the player is trying to interact *)
     (match p.state with
      | Interact (dir,_) 
        (* Check if the player is looking at this item *)
-       when (Vector.vec_of_dir dir) = subtract (x,y) p.pos -> 
+       when Vector.greater (0.7,0.7) (((Vector.subtract (Vector.add p.pos (vec_of_dir dir)) (x,y)))|> Vector.abs) -> 
        Some {item with pos = begin match get_unused_inventory st.current_room with Some i -> Inventory {index = i} |None -> item.pos end }
      (*) let (x,y) = p.pos in 
        (match dir, x -. pos.x, y -. pos.y with

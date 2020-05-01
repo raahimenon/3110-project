@@ -28,9 +28,15 @@ val greater : t -> t -> bool
 (** [print x] returns a representation of s.*)
 val print : t -> string
 
+val abs : t->t
+
 (** [add_ints x y] is the int vector that is formed when [x] and [y] are added,
     with addition taking place componentwise.*)
 val add_ints : s -> s -> s
+
+(** [sub_ints x y] is the int vector that is formed when [x] and [y] are added,
+    with addition taking place componentwise.*)
+val sub_ints : s -> s -> s
 
 (** [vec_of_dir dir] is the unit vector corresponding to direction [dir] in the
     plane.*)

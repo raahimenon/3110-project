@@ -19,6 +19,11 @@ let print (a,b) = (string_of_float a ^ "," ^ string_of_float b)
 
 let add_ints (a,b) (c,d) = (a+c,b+d)
 
+
+let abs (a,b) = abs_float a, abs_float b
+
+let sub_ints (a,b) (c,d) = (a-c,b-d)
+
 let vec_of_dir = function 
   |Up -> (0.,-1.)
   |Down ->  (0.,+1.)

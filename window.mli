@@ -47,6 +47,8 @@ val wait : float -> unit
 (** [input_state] checks if there are any keys to be read at the moment *)
 val input_query : input list -> input list
 
+val collision : int*int -> int*int -> int*int -> int*int -> bool
+
 val get_renderer : window -> Sdlrender.t
 
 val get_time : unit -> int

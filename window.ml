@@ -58,22 +58,39 @@ let exit_window (win : window) : unit =
   Sdl.quit ();
   exit 0
 
-let rec remove elt lst = match lst with 
-  | h :: t -> if elt = h then t else h :: remove elt t
-  | [] -> []
+let rec print_list lst = match lst with
+  | [] -> print_endline ""
+  | h::t -> print_string (Sdlkeycode.to_string h); print_list t
+
+
+let  remove elt lst = 
+  let rec rec_remove  elt lst = 
+    match lst with 
+    | h :: t -> if elt = h then t else h :: rec_remove elt t
+    | [] -> [] in 
+  rec_remove elt lst
 
 let rec input_query lst : input list = 
   let lst = MWheel 0 :: List.filter (function |MWheel _ -> false |MClick _ -> false | _ -> true) lst in
   let rec event (found : input list) = match Sdlevent.poll_event () with
     | None -> found
     | Some (KeyDown({keycode = k; }))->  
-      event (if not (List.mem (Key k) lst) then (Key k)::lst else lst)
-    | Some (KeyUp({keycode = k; })) -> event (remove (Key k) lst)
+      event ((Key k)::(remove (Key k) found))
+    | Some (KeyUp({keycode = k; })) -> event (remove (Key k) found)
     | Some Mouse_Wheel {mw_y = y} -> 
       List.map (function |MWheel old -> MWheel (old + y) |e -> e) found
-    | Some (Mouse_Button_Down {mb_button = b}) -> event (if not (List.mem (MClick b) lst) then (MClick b)::lst else lst)
+    | Some (Mouse_Button_Down {mb_button = b}) -> event ((MClick b)::(remove (MClick b) found))
     | Some ev -> event found in
   event lst
+
+let collision pos1 size1 pos2 size2 =
+  (fst pos1 < fst pos2 + fst size2) &&
+  (fst pos1 + fst size1 > fst pos2) &&
+  (snd pos1 < snd pos2 + snd size2) &&
+  (snd pos1 + snd size1 > snd pos2) 
+
+(*Sdlrect.has_intersection (Sdlrect.make pos1 size1) (Sdlrect.make pos2 size2)*)
+
 
 let get_renderer w = snd w
 

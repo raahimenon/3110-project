@@ -29,7 +29,7 @@ module Item : (Entity with type t = item_type)  = struct
       begin match t.unique_stats with
         | Buff {durability; max_durability} ->
           let ratio = float_of_int durability /. (float_of_int max_durability) in
-          Window.draw_rect_col win (255. *. (1. -. ratio) |> int_of_float, 255.*.ratio|>int_of_float, 0) (x_draw+.0.1,y_draw+.0.8) (0.8*.ratio, 1./.GameVars.tile_size)
+          Window.draw_rect_col win (255. *. (1. -. ratio) |> int_of_float, 255.*.ratio|>int_of_float, 0) (x_draw+.0.1,y_draw+.0.8) (0.9*.ratio, 1./.GameVars.tile_size)
         | _ -> () end
     | Position {x;y} -> let (x_draw,y_draw) = Vector.center center (x,y) in 
       Window.draw_image win (snd t.curr_anim).(t.curr_frame_num) x_draw y_draw

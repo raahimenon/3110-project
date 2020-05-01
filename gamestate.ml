@@ -21,7 +21,7 @@ let rec apply_buffs (player:Player.t) (buffs:Buff.buff_type list) =
   | h::t -> begin 
       match h with
       | Buff.Max_health mh -> {player with max_health = player.max_health + mh}
-      | Buff.Health h -> {player with health = player.health + h}
+      | Buff.Health h -> let h = player.health + h in  {player with health = if h > player.max_health then player.max_health else h}
       | _ -> player
     end
 
@@ -119,7 +119,6 @@ let change_state_input player input =
 let player_updater (st:state) (player:Player.t) = 
   let player = 
     {player with 
-     health = player.health - 1;
      curr_frame_num = Animations.next_frame player.curr_frame_num player.curr_anim;
      inventory_slot = let next_slot = player.inventory_slot + read_mouse st.input in
        if next_slot >= 0 && next_slot < GameVars.inventory_size then next_slot else player.inventory_slot

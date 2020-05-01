@@ -59,7 +59,7 @@ let player_move (player : Player.t) rm =
   let newpos = player.direction |> vec_of_dir |> scale_vec speed |> add player.pos 
   in 
   let newplayer = {player with pos = newpos; curr_tile = to_int newpos;} in 
-  if Room.collision_with_player  rm newplayer <> None then player else newplayer
+  if Room.collision_with_player rm newplayer <> None then player else newplayer
 
 (*if not (check_if_pos_reached player) 
   then player else
@@ -162,12 +162,7 @@ let item_updater (st:state) (item:Item.t) =
     (match p.state with
      | Interact (dir,_) 
        (* Check if the player is looking at this item *)
-       when Vector.greater (0.7,0.5) (((Vector.subtract (Vector.add p.pos (vec_of_dir dir)) (x,y)))|> Vector.abs) -> {item with pos = Inventory}
-
-     (* let (x,y) = p.pos in 
-        (match dir, x -. pos.x, y -. pos.y with
-        | Up, 0., -1. | Down, 0., 1. | Right, -1., 0. | Left, 1., 0.
-         -> *)
+       when Vector.greater (0.7,0.7) (((Vector.subtract (Vector.add p.pos (vec_of_dir dir)) (x,y)))|> Vector.abs) -> {item with pos = Inventory}
      | other -> item)
 
 let room_updater (st:state) room:Room.t = 

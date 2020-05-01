@@ -49,17 +49,31 @@ let exit_window (win : window) : unit =
   Sdl.quit ();
   exit 0
 
-let rec remove elt lst = match lst with 
-  | h :: t -> if elt = h then t else h :: remove elt t
-  | [] -> []
+let rec print_list lst = match lst with
+  | [] -> print_endline ""
+  | h::t -> print_string (Sdlkeycode.to_string h); print_list t
+
+
+let  remove elt lst = 
+  let rec rec_remove  elt lst = 
+    match lst with 
+    | h :: t -> if elt = h then t else h :: rec_remove elt t
+    | [] -> [] in 
+  rec_remove elt lst
+
 
 let rec input_query lst : input = 
-  let rec event (found : input) = match Sdlevent.poll_event () with
-    | None -> found
-    | Some (KeyDown({keycode = k; }))->  event (if not (List.mem k lst) then k::lst else lst)
-    | Some (KeyUp({keycode = k; })) -> event (remove k lst)
+  let rec event (found : input) = (*print_list found; *)
+    match Sdlevent.poll_event () with
+    | None -> (*print_list found;*) found
+    | Some (KeyDown({keycode = k; ke_repeat =r;})) when r = 0 -> (*print_endline ("adding " ^ Sdlkeycode.to_string k);*) event (k :: (remove k found))
+    | Some (KeyUp({keycode = k; ke_repeat = r;})) when r = 0 -> (*print_endline ("removing " ^ Sdlkeycode.to_string k);*) event (remove k found)
     | Some ev -> event found in
   event lst
+
+let collision pos1 size1 pos2 size2 =
+  Sdlrect.has_intersection (Sdlrect.make pos1 size1) (Sdlrect.make pos2 size2)
+
 
 let get_renderer w = snd w
 

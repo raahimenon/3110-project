@@ -1,5 +1,5 @@
 open Entity
-
+open Vector
 type stat_type = Combat of Combat.t | Buff of Buff.t
 type entity_id = int
 type direction = |Up |Down |Left |Right
@@ -12,6 +12,8 @@ type player_type =  {
   curr_frame_num: int;
   direction: Entity.direction;
   size : Entity.size_t;
+  bounding_box : Entity.size_t;
+  bounding_box_pos : Entity.size_t;
   name : Entity.name_t;
   frame : Entity.entity_frame;
   pos : Entity.pos_t;
@@ -30,7 +32,7 @@ module Player : (Entity with type t = player_type)  = struct
   let update t f = f t
   let draw win center t =  
     let (x_draw,y_draw) = Vector.center center t.pos in 
-    Window.draw_image win (snd t.curr_anim).(t.curr_frame_num) x_draw y_draw
+    Window.draw_image win (snd t.curr_anim).(t.curr_frame_num) x_draw (y_draw)
 end
 
 let make_player name id (win : Window.window)= 
@@ -42,6 +44,8 @@ let make_player name id (win : Window.window)=
     curr_frame_num = 0;
     direction = Down;
     size = animations |> List.hd |> Animations.size;
+    bounding_box = animations |> List.hd |> Animations.size;
+    bounding_box_pos = (0,0);
     name = name;
     frame = Animations.curr_frame 0 curr_anim; 
     pos = 1.,1.;

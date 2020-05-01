@@ -10,6 +10,7 @@ type item_type = {
   curr_frame_num: int;
   size : Entity.size_t;
   bounding_box : Entity.size_t;
+  bounding_box_pos: Entity.size_t;
   name : Entity.name_t;
   frame : Entity.entity_frame;
   pos : pos_t;
@@ -35,7 +36,8 @@ let make_item name id (win: Window.window)=
     curr_anim = curr_anim;
     curr_frame_num = 0;
     size = animations |> List.hd |> Animations.size ;
-    bounding_box = animations |> List.hd |> Animations.size;
+    bounding_box = (7,16);
+    bounding_box_pos  = (4,0);
     name = name;
     frame = Animations.curr_frame 0 curr_anim; 
     pos = Position  (2.,3.);

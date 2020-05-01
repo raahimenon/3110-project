@@ -9,6 +9,7 @@ type item_type = {
   curr_frame_num: int;
   size : Entity.size_t;
   bounding_box : Entity.size_t;
+  bounding_box_pos : Entity.size_t;
   name : Entity.name_t;
   frame : Entity.entity_frame;
   pos : pos_t;

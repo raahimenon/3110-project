@@ -59,7 +59,7 @@ let player_move (player : Player.t) rm =
   let newpos = player.direction |> vec_of_dir |> scale_vec speed |> add player.pos 
   in 
   let newplayer = {player with pos = newpos; curr_tile = to_int newpos;} in 
-  if Room.collision_with_player  rm newplayer then player else newplayer
+  if Room.collision_with_player  rm newplayer <> None then player else newplayer
 
 (*if not (check_if_pos_reached player) 
   then player else

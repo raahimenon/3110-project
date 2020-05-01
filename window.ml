@@ -70,6 +70,7 @@ let rec input_query lst : input =
     | Some (KeyUp({keycode = k; ke_repeat = r;})) when r = 0 -> (*print_endline ("removing " ^ Sdlkeycode.to_string k);*) event (remove k found)
     | Some ev -> event found in
   event lst
+
 let collision pos1 size1 pos2 size2 =
   Sdlrect.has_intersection (Sdlrect.make pos1 size1) (Sdlrect.make pos2 size2)
 

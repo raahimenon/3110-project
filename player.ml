@@ -13,6 +13,7 @@ type player_type =  {
   direction: Entity.direction;
   size : Entity.size_t;
   bounding_box : Entity.size_t;
+  bounding_box_pos : Entity.size_t;
   name : Entity.name_t;
   frame : Entity.entity_frame;
   pos : Entity.pos_t;
@@ -44,6 +45,7 @@ let make_player name id (win : Window.window)=
     direction = Down;
     size = animations |> List.hd |> Animations.size;
     bounding_box = animations |> List.hd |> Animations.size;
+    bounding_box_pos = (0,0);
     name = name;
     frame = Animations.curr_frame 0 curr_anim; 
     pos = 1.,1.;

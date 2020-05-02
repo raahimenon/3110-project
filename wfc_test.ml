@@ -14,17 +14,15 @@ let wfc_test () =
   let w = Wall (Animations.load_image "./sprites/room/wall.bmp" (Window.get_renderer window)) in
   let input =
     [|
-      [| w ; f ; w ; w ; w ; w ; |];
-      [| w ; f ; w ; w ; w ; w ; |];
-      [| w ; f ; f ; f ; w ; w ; |];
-      [| w ; f ; f ; f ; f ; f ; |];
-      [| w ; f ; f ; f ; w ; w ; |];
-      [| w ; w ; f ; w ; w ; w ; |];
+      [| w ; f ; w ; w |];
+      [| w ; f ; w ; w |];
+      [| w ; f ; f ; f |];
+      [| w ; f ; f ; f |];
     |] in
 
   print_endline "begin wfc";
   Save.save
-    (Room_gen.generate_room (0) (input) (3) (50) (50) (0))
+    (Room_gen.generate_room (0) (input) (2) (10) (10) (0))
     ("wfc_test"^(string_of_int (Random.int 1000000))^".json");
   print_endline "wfc complete";
 

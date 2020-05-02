@@ -83,7 +83,7 @@ let rec collapse_loop (samples : Room.tile array array array)
   let target_coords =
     Array.get candidate_indices (Random.int (Array.length candidate_indices))
   in
-
+  print_endline "2.5";
   (* Collapse the selected section to a randomly selected sample *)
   (* Identify potential samples *)
   let sample_indices =
@@ -141,16 +141,30 @@ let rec collapse_loop (samples : Room.tile array array array)
       done;
       (* Check for a new minimum entropy *)
       new_min_ent := min !new_min_ent (get_entropy wave.(i).(j));
-      print_endline "new in1 value";
+      if !new_min_ent = 0
+      then Array.iter (fun b -> b |> string_of_bool |> (print_string " "; print_string)) wave.(i).(j)
+      else
+        print_endline "new in1 value";
     done;
     print_endline "new outer value";
   done;
   print_endline "5";
 
   (* Fail if any entropy value reaches 0, indicating contradiction *)
-  if !new_min_ent = 0 then failwith "contradiction" else
+  (*if !new_min_ent = 0 then failwith "contradiction" else*)
+  (* For the moment, returns partial floor. TODO: restore original *)
+  let output = if !new_min_ent = 0
+    then output |> Array.map
+           (fun row ->
+              row |> Array.map
+                (fun opt -> match opt with
+                   | Some t -> Some t
+                   | None ->   let window = Window.create_window "3110 Project" (GameVars.width * (int_of_float GameVars.tile_size)) (GameVars.height * (int_of_float GameVars.tile_size)) in
+                     Some (Room.Floor (Animations.load_image "./sprites/room/floor.bmp" (Window.get_renderer window)))))
+    else output
+  in
 
-    (* Check if further repetitions are required *)
+  (* Check if further repetitions are required *)
   if not (Array.exists (Array.mem None) output)
   (* If complete, unbind tiles from options and return *)
   then output |> Array.map
@@ -160,8 +174,9 @@ let rec collapse_loop (samples : Room.tile array array array)
   else collapse_loop samples wave output seed !new_min_ent
 
 (** Central method. Too sleepy to document. Haven't even test it yet. *)
-let generate_room (seed : int) (input : Room.tile array array) (sample_dim : int)
-    (output_rows : int) (output_cols : int) (difficulty : int) : Room.t =
+let generate_room (seed : int) (input : Room.tile array array)
+    (sample_dim : int) (output_rows : int) (output_cols : int)
+    (difficulty : int) : Room.t =
   (* Validate inputs *)
   if (sample_dim > Array.length input)
   || (sample_dim > Array.length input.(0))

@@ -34,7 +34,7 @@ let draw_tile (win : Window.window) (rm : t) (x : int) (y : int) =
 
 let draw_room (win : Window.window) (rm : t) = 
   Array.iteri (fun y row -> Array.iteri (fun x tile -> draw_tile win rm x y) row) rm.tiles;
-  Player.draw win rm.player.pos rm.player ;
+  Player.draw win rm.player.pos rm.player;
   let _ = List.map (Item.draw win rm.player.pos) rm.items in ()
 
 let entity_at_tile rm tile = 

@@ -5,19 +5,20 @@ type name_t = string
 type entity_frame = Animations.image
 
 module type Entity = sig
-  (*type pos_t = 
-    | Coordinates of {x : int; y:int} 
-    | Inventory
-    type entity_id = int
-    type size_t = int * int
-    type name_t = string
-    type entity_frame = Animations.image
-    type entity_state
-    type stat_type = Combat of Combat.t | Buff of Buff.t*)
-
   type t 
   val draw: Window.window -> pos_t -> t -> unit
-
-  val update: t-> (t-> t) -> t
 end
 
+type e ={
+  animations: Animations.animation list;
+  curr_anim: Animations.animation;
+  curr_frame_num: int;
+  direction: direction;
+  size : size_t;
+  bounding_box : size_t;
+  bounding_box_pos : size_t;
+  name : name_t;
+  frame : entity_frame;
+  pos : pos_t;
+  curr_tile : int*int;
+}

@@ -9,7 +9,7 @@ type player_state = Idle | Use_Item of Entity.direction*int | Move of Entity.dir
 type player_type =  {
   e: Entity.e;
   tile_destination:int*int;
-  reach_dest : bool;
+  being_attacked : bool;
   id : entity_id;
   max_health : int;
   health : int;
@@ -47,7 +47,7 @@ let make_player name id (win : Window.window)=
        curr_tile = 1,1;};
     id = id;
     tile_destination = 0,0;
-    reach_dest = true;
+    being_attacked = false;
     max_health = 100;
     health = 100;
     state = Idle;

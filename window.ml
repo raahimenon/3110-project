@@ -89,9 +89,6 @@ let collision pos1 size1 pos2 size2 =
   (snd pos1 <= snd pos2 + snd size2) &&
   (snd pos1 + snd size1 >= snd pos2) 
 
-(*Sdlrect.has_intersection (Sdlrect.make pos1 size1) (Sdlrect.make pos2 size2)*)
-
-
 let get_renderer w = snd w
 
 let get_time = Sdltimer.get_ticks

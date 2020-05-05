@@ -5,6 +5,7 @@ open Gamestate
 open Animations
 open Combat
 open Item
+open Enemy
 
 let main () = 
 
@@ -16,7 +17,9 @@ let main () =
   let default_item = make_item "blue-rupee" 1 window 2 3 in
   let default_item2 = make_item "blue-rupee" 2 window 5 8 in
 
-  let default_room = {(Load.load load_file window)  with items =[default_item; default_item2]} in
+  let default_enemy = make_enemy "link" 3 window in 
+
+  let default_room = {(Load.load load_file window)  with items =[default_item; default_item2]; enemies = [default_enemy;]} in
 
   let () = Window.clear window in
   let () = Window.render window in

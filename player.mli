@@ -7,7 +7,7 @@ type entity_id = int
 type player_type =  {
   e: Entity.e;
   tile_destination : int*int;
-  reach_dest : bool;
+  being_attacked : bool;
   id : entity_id;
   max_health : int;
   health : int;

@@ -44,10 +44,10 @@ let sample_space (input : Room.tile array array) (sample_dim : int)
   (* Conditional addition of rotated samples *)
   |> (if rotations_on 
       then (fun s ->
-          let rot90 = Array.map rotate_sample_90 s
-          in let rot180 = Array.map rotate_sample_90 rot90
-          in let rot270 = Array.map rotate_sample_90 rot180
-          in Array.concat [s; rot90; rot180; rot270])
+          let rot90 = Array.map rotate_sample_90 s in
+          let rot180 = Array.map rotate_sample_90 rot90 in
+          let rot270 = Array.map rotate_sample_90 rot180 in
+          Array.concat [s; rot90; rot180; rot270])
       else (fun s -> s))
 
 (** [get_entropy elem] returns the number of possibilities for a given element 
@@ -55,11 +55,27 @@ let sample_space (input : Room.tile array array) (sample_dim : int)
 let get_entropy (elem : bool array) : int =
   Array.fold_left (fun prev b -> prev + Bool.to_int b) 0 elem
 
-(** [get_indices condition a] returns the indices of all elements in [a] that 
-    satisfy [condition]. *)
+(** [get_indices condition a] returns the indices of all elements in array 
+    [a] that satisfy [condition]. *)
 let get_indices (condition : 'a -> bool) (a : 'a array) : int array =
   a |> Array.mapi (fun i elem -> if condition elem then Some i else None)
   |> Array.to_list |> List.filter_map (fun o -> o) |> Array.of_list
+
+(** [get_indices2 condition a] returns the indices of all elements in matrix 
+    [a] that satisfy [condition]. *)
+let get_indices2 (condition : 'a -> bool) (a : 'a array array)
+  : int array array =
+  let temp = Queue.create () in
+
+  for i = 0 to (Array.length a - 1) do
+    for j = 0 to (Array.length a.(i) - 1) do
+      if (condition a.(i).(j))
+      then (Queue.add [|i; j|] temp)
+      else ()
+    done;
+  done;
+
+  Array.init (Queue.length temp) (fun i -> Queue.pop temp)
 
 (* Collapses the wave function. Raises [Failure] if collapse leads to a 
    contradictory state. *)
@@ -73,14 +89,24 @@ let rec collapse_loop (samples : Room.tile array array array)
   (* Randomly select a minimum entropy wave section and collapse it *)
   (* Identify potential wave sections *)
   let candidate_indices =
-    wave |> Array.to_list |> List.map Array.to_list |> List.flatten
-    |> Array.of_list |> get_indices
-      (fun elem -> get_entropy elem = minimum_entropy) |> Array.map
-      (fun index -> [|(index / Array.length wave);
-                      (index mod Array.length wave)|])
+    (* All sections with desired entropy *)
+    (get_indices2 (fun e -> (get_entropy e) = minimum_entropy) wave)
+    (* Filter out collapsed sections *)
+    |> Array.to_list
+    |> List.filter_map
+      (fun ind -> let viable = ref false in
+        for i = 0 to (Array.length samples.(0) - 1) do
+          for j = 0 to (Array.length samples.(0).(0) - 1) do
+            match output.(ind.(0) + i).(ind.(1) + j) with
+            | None -> viable := true
+            | Some t -> ()
+          done
+        done;
+        if !viable then Some ind else None)
+    |> Array.of_list
   in
 
-  print_endline "get random target";
+  print_endline ("get random target of " ^ (string_of_int (Array.length candidate_indices)));
   (* Randomly select a wave section *)
   let target_coords =
     Array.get candidate_indices (Random.int (Array.length candidate_indices))
@@ -97,84 +123,98 @@ let rec collapse_loop (samples : Room.tile array array array)
     Array.get sample_indices (Random.int (Array.length sample_indices))
   in
 
-  (* Collapse *)
-  wave.(target_coords.(0)).(target_coords.(1))
-  <- Array.mapi (fun i e -> if i = sample_index then true else false) samples;
-
   (* Propogate the collapse to output *)
   for i = 0 to Array.length samples.(sample_index) - 1 do
-    for j = 0 to Array.length samples.(sample_index).(0) - 1 do
+    for j = 0 to Array.length samples.(sample_index).(i) - 1 do
       (* Sanity check. Verifies that the collapse is either agreeing with 
          existing tiles, or ovewriting [None] tiles. TODO: remove *)
       (match output.(target_coords.(0) + i).(target_coords.(1) + j) with
        | None -> ()
        | Some t when t = samples.(sample_index).(i).(j) -> ()
-       | Some other -> failwith "sanity check failed at room_gen line 110");
+       | Some other ->
+         raise (Sys_error "sanity check failed at room_gen line 124"));
 
       output.(target_coords.(0) + i).(target_coords.(1) + j)
       <- Some samples.(sample_index).(i).(j)
     done
   done;
 
-
-  (* Recalculate local wave and minimum entropy *)
-  let new_min_ent = ref minimum_entropy in
-  (* Adjust local wave possibilities *)
-  (* Iterate across potentially affected area *)
-  for i = max 0
-        (target_coords.(0) - (Array.length samples.(0)) + 1)
-    to min (Array.length wave - 1)
-        (target_coords.(0) + (Array.length samples.(0)) - 1) do
-    for j = max 0
-          (target_coords.(1) - (Array.length samples.(0).(0)) + 1)
-      to min (Array.length wave.(0) - 1)
-          (target_coords.(1) + (Array.length samples.(0).(0)) - 1) do
+  (* Adjust wave possibilities *)
+  for i = 0 to Array.length wave - 1 do
+    for j = 0 to Array.length wave.(0) - 1 do
       (* Iterate across each sample *)
-      (* Check that sample is viable by comparing each predicted tile with
-         partially collapsed output *)
-      (* FLAG POTENTIALLY FIXED AREA?? *)
       wave.(i).(j)
       <- (samples |> Array.map
-            (fun s -> let viable = ref true in
-              for n = 0 to Array.length s - 1 do
-                for m = 0 to Array.length s.(n) - 1 do
-                  match output.(i + n).(j + m) with
-                  | Some t when t <> s.(n).(m) -> viable := false
-                  | other -> ()
-                done;
-              done;
-              !viable););
-      (* Check for a new minimum entropy *)
-      (if output.(i).(j) = None
-       then new_min_ent := min !new_min_ent (get_entropy wave.(i).(j))
-       else ());
+            (* Check that sample is viable by comparing each predicted tile 
+               with partially collapsed output *)
+            (fun s ->
+               let viable = ref true in
+               for n = 0 to Array.length s - 1 do
+                 for m = 0 to Array.length s.(n) - 1 do
+                   match output.(i + n).(j + m) with
+                   | Some t when t <> s.(n).(m) -> viable := false
+                   | other -> ()
+                 done;
+               done;
+               !viable);); if (Array.mem true wave.(i).(j)) then () else (
+        print_endline ""; 
+        for n = 0 to Array.length samples.(0) - 1 do
+          for m = 0 to Array.length samples.(0).(0) - 1 do
+            match output.(i + n).(j + m) with
+            | Some Room.Wall a -> print_string " w "
+            | Some Room.Floor a -> print_string " f "
+            | None -> print_string " _ ";
+            | other -> print_string " ? " 
+          done; print_endline "";
+        done
+      )
     done;
+  done;
+
+  (* Recalculate minimum entropy *)
+  let new_min_ent = ref (Array.length samples + 1) in
+  for i = 0 to (Array.length wave - 1) do
+    for j = 0 to (Array.length wave.(i) - 1) do
+      (* Check that section has not been collapsed *)
+      let fully_collapsed = ref true in
+      for n = 0 to (Array.length samples.(0) - 1) do
+        for m = 0 to (Array.length samples.(0).(n) - 1) do
+          (match output.(i + n).(j + m) with
+           | None -> fully_collapsed := false
+           | Some other -> ())
+        done
+      done;
+
+      (* If uncollapsed, calculate entropy and compare to minimum *)
+      if (!fully_collapsed)
+      then ()
+      else (new_min_ent := min !new_min_ent (get_entropy wave.(i).(j)))
+    done
   done;
 
   (* Fail if any entropy value reaches 0, indicating contradiction *)
   if !new_min_ent = 0 then failwith "contradiction" else ();
 
   (*TODO: Remove debug prints bundle *)
-  let temp = ref 0 in
+  let ctiles = ref 0 in
   for i = 0 to Array.length output - 1 do
     for j = 0 to Array.length output.(0) - 1 do
       match output.(i).(j) with
       | None -> ()
-      | Some t -> temp := !temp + 1
+      | Some t -> ctiles := !ctiles + 1
     done;
   done;
   iters := !iters + 1;
-  print_float (Sys.time ());
-  print_string ("\t" ^ (string_of_int !iters) ^ " / " ^ (string_of_int ((Array.length output) * (Array.length output.(0)))
-                                                         ^ "\t" ^ ": "));
-  print_int !temp; print_string (" " ^ (string_of_bool (Array.exists (Array.mem None) output)) ^ " min_ent: ");
-  print_int !new_min_ent;
+  print_string ("[" ^ (string_of_float (Sys.time ()) ^ "]"));
+  print_string ("\t Prog: " ^ (string_of_int !iters));
+  print_string ("\t CTiles: " ^ (string_of_int !ctiles) ^ " / " ^ (string_of_int ((Array.length output) * (Array.length output.(0)))));
+  print_string ("\t MinEnt: " ^ (string_of_int !new_min_ent));
   print_endline "";
 
-  (* Check if further repetitions are required *)
+  (* Check if any uncollapsed tiles remain *)
   if (Array.exists (Array.mem None) output)
   (* If incomplete, keep going *)
-  then (collapse_loop samples wave output seed !new_min_ent)
+  then (collapse_loop samples wave output (Random.int 20010827) !new_min_ent)
   (* If complete, unbind tiles from options and return *)
   else output |> Array.map
          (fun row -> row |> Array.to_list |> List.filter_map
@@ -197,7 +237,7 @@ let generate_room (seed : int) (input : Room.tile array array)
   let rotations_on = true in
   let reflections_on = true in
   let attempts = 100 in
-  let time_cap = Sys.time () +. 100. in
+  let time_cap = Sys.time () +. 1000. in
 
   (* Generate sample space list *)
   let samples = sample_space input sample_dim rotations_on reflections_on in
@@ -211,6 +251,10 @@ let generate_room (seed : int) (input : Room.tile array array)
   (* Empty tile array for the final layout *)
   let output = Array.make output_rows (Array.make output_cols None) in
 
+  (* Seed should vary between attempts *)
+  Random.init seed;
+  let attempt_seed = ref (Random.bits ())in
+
   (* Generative loop *)
   let tiles : Room.tile array array ref = ref [||] in
   print_string ("initial tiles array length: "^(string_of_int (Array.length !tiles)^"\n"));
@@ -221,15 +265,16 @@ let generate_room (seed : int) (input : Room.tile array array)
         print_endline "attempt";
         let w_cop = wave |> Array.map (Array.map Array.copy) in
         let o_cop = output |> Array.map Array.copy in
-        try tiles := collapse_loop (samples) (w_cop) (o_cop) (seed) (Array.length samples)
-        with Failure f -> print_string ("Attempt " ^ (string_of_int attempt)
-                                        ^ " failed.\n");
+        try tiles := collapse_loop (samples) (w_cop) (o_cop) (!attempt_seed) (Array.length samples)
+        with Failure f -> (iters := 0; Random.init seed; attempt_seed := Random.bits ();
+                           print_string ("Attempt " ^ (string_of_int attempt)
+                                         ^ " failed: " ^ f ^ "\n"));
 
           (* Ensure limits have not been exceeded *)
           if (Sys.time () > time_cap || attempt = attempts)
           then failwith ("Timed out after attempt " ^ (string_of_int attempt)
                          ^ " and elapsed time "
-                         ^ (string_of_float (Sys.time ()-. time_cap +. 1000.)))
+                         ^ (string_of_float (Sys.time ()-. time_cap +. 100.)))
           else ())
     else ();
   done;
@@ -260,13 +305,55 @@ let simple_gen (seed : int) (window : Window.window): Room.t =
   let w = Room.Wall (Animations.load_image "./sprites/room/wall.bmp" (Window.get_renderer window)) in
   let input =
     [|
-      [| w ; f ; w ; w |];
-      [| w ; f ; w ; w |];
-      [| w ; f ; f ; f |];
-      [| w ; f ; f ; f |];
+      [| w ; w ; f ; w ; w ; w ; w ; w ; f ; w |];
+      [| w ; w ; f ; w ; w ; w ; f ; f ; f ; w |];
+      [| w ; f ; f ; f ; f ; f ; f ; w ; f ; w |];
+      [| w ; f ; w ; w ; w ; w ; f ; w ; f ; w |];
+      [| f ; f ; w ; w ; w ; w ; f ; w ; f ; w |];
+      [| w ; f ; w ; w ; w ; w ; f ; w ; f ; w |];
+      [| w ; f ; f ; f ; f ; w ; f ; w ; f ; w |];
+      [| w ; f ; w ; w ; f ; f ; f ; f ; f ; w |];
+      [| w ; f ; f ; f ; f ; w ; w ; f ; w ; w |];
+      [| w ; w ; w ; f ; w ; w ; w ; f ; w ; w |];
     |]
   in
-  generate_room (seed) (input) (1) (10) (10) (0) (window)
+  let total_2_coverage_input =
+    [|
+      [| w ; w ; f ; f ; f ; w ; w ; f |];
+      [| w ; w ; f ; f ; w ; w ; f ; w |];
+      [| w ; w ; f ; f ; w ; w ; f ; w |];
+    |] 
+  in
+  let trivial_3_input = 
+    [|
+      [| f ; w ; f ; w |];
+      [| w ; f ; w ; f |];
+      [| f ; w ; f ; w |];
+      [| w ; f ; w ; f |];
+    |]
+  in
+  let big_chungus_input = 
+    [|
+      [| w ; w ; w ; f ; w ; w ; w ; w ; w ; w ; w ; w ; f ; w ; w ; w |];
+      [| w ; w ; w ; f ; w ; w ; w ; w ; w ; f ; f ; f ; f ; f ; f ; w |];
+      [| w ; f ; f ; f ; f ; f ; w ; w ; w ; f ; f ; f ; f ; f ; f ; w |];
+      [| w ; f ; f ; f ; f ; f ; w ; w ; w ; f ; f ; f ; f ; f ; f ; w |];
+      [| w ; f ; f ; f ; f ; f ; f ; f ; f ; f ; f ; f ; f ; f ; f ; w |];
+      [| f ; f ; f ; f ; f ; f ; w ; w ; w ; f ; f ; f ; f ; f ; f ; f |];
+      [| w ; f ; f ; f ; f ; f ; w ; w ; w ; f ; f ; f ; f ; f ; f ; w |];
+      [| w ; w ; f ; w ; w ; w ; w ; w ; w ; f ; f ; f ; f ; f ; f ; w |];
+      [| w ; w ; f ; w ; w ; w ; w ; w ; w ; w ; w ; f ; w ; w ; w ; w |];
+      [| w ; w ; f ; w ; w ; w ; w ; w ; w ; w ; w ; f ; w ; w ; w ; w |];
+      [| w ; w ; f ; f ; f ; f ; f ; f ; w ; w ; f ; f ; f ; f ; w ; w |];
+      [| f ; f ; f ; f ; f ; f ; f ; f ; w ; w ; f ; f ; f ; f ; f ; f |];
+      [| w ; w ; f ; f ; f ; f ; f ; f ; f ; f ; f ; f ; f ; f ; w ; w |];
+      [| w ; w ; f ; f ; f ; f ; f ; f ; w ; w ; f ; f ; f ; f ; w ; w |];
+      [| w ; w ; f ; f ; f ; f ; f ; f ; w ; w ; w ; w ; f ; w ; w ; w |];
+      [| w ; w ; w ; f ; w ; w ; w ; w ; w ; w ; w ; w ; f ; w ; w ; w |];
+    |]
+  in
+
+  generate_room (seed) (big_chungus_input) (3) (12) (15) (0) (window)
   |> (fun room -> 
       print_int (Array.length room.tiles); print_endline "";
       print_int (Array.length room.tiles.(0)); print_endline "";

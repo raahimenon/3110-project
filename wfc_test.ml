@@ -15,7 +15,7 @@ let wfc_test () =
   let () = Window.render window in
   Gamestate.game_loop 
     {running = true;
-     current_room = Room_gen.simple_gen 16242743 window;
+     current_room = Room_gen.simple_gen 1606842743 window;
      window = window;
      input = [];
     } (Window.get_time ());

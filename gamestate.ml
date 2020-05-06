@@ -7,12 +7,14 @@ open Player
 open Vector
 
 (** [state] is the current game state *)
+
 type state =
   {
     running : bool;
     current_room : Room.t;
     window : Window.window;
-    input : Window.input list
+    input : Window.input list;
+    icons : (string*Animations.image) list;
   }
 
 let rec apply_buffs (player:Player.t) (buffs:Buff.buff_type list) =
@@ -243,6 +245,13 @@ let room_updater (st:state) room : Room.t =
              enemies = room.enemies |> List.filter_map (enemy_updater st);
              items = room.items |> List.map (item_updater st) |> List.filter (fun i -> i <> None) |> List.map (Option.get)}
 
+let icons_of_int num st : Animations.image list = 
+  let num = string_of_int num in
+  let rec icons accu = function
+    | str when str = "" -> accu
+    | s -> icons ((Animations.get_icon (String.sub s 0 1) st.icons)::accu) (String.sub s 1 (String.length s - 1)) in
+  icons [] num |> List.rev
+
 let draw_hud (st : state) = 
   let player = st.current_room.player in
   let ratio = float_of_int player.health /. (float_of_int player.max_health) in
@@ -250,7 +259,11 @@ let draw_hud (st : state) =
   Window.draw_rect_col st.window 
     (Window.health_col_ratio ratio)
     (float_of_int GameVars.width -. 1. -. GameVars.hud_bezel_tile,1.)
-    (1., (float_of_int GameVars.height -. 2.)*.ratio);
+    (1., (float_of_int GameVars.height -. 2.)*.ratio/.2.);
+  Window.draw_image st.window (Animations.get_icon "attack" st.icons) (float_of_int GameVars.width -. 1.75) (2. +. (float_of_int GameVars.height -. 2.)/.2.);
+  List.iteri 
+    (fun idx ic -> Window.draw_image st.window ic (float_of_int GameVars.width -. 0.75 +. (float_of_int idx) *. 0.25) (2. +. (float_of_int GameVars.height -. 2.)/.2.))
+    (icons_of_int st.current_room.player.attack st);
   List.map (fun (i : Item.t) -> match i.pos with Inventory _ -> Item.draw st.window st.current_room.player.pos i |_ -> ()) st.current_room.items
 
 let rec game_loop st time = 
@@ -269,5 +282,6 @@ let rec game_loop st time =
              current_room = 
                st.current_room |> room_updater st;
              window = st.window;
-             input = input } in
+             input = input;
+             icons = st.icons} in
   game_loop st curr_time

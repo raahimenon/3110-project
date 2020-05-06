@@ -25,6 +25,7 @@ let main () =
      current_room = default_room;
      window = window;
      input = [];
+     icons = Animations.load_icons (Window.get_renderer window);
     } (Window.get_time ());
   Window.wait 5;
   Window.exit_window window

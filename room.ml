@@ -14,14 +14,13 @@ type t =
     tiles: tile array array;
   }
 type collision = CItem of Item.t | CEnemy of Enemy.t 
-               | CWall of tile | CExit of tile
+               | CWall of tile | CExit of tile | CPlayer of Player.t
 
 let next_room (rm : t) = rm
-let update_room (rm : t) f = {rm with player = Player.update rm.player f}
 
 let draw_tile (win : Window.window) (rm : t) (x : int) (y : int) =
   let position = (x,y) |> Vector.from_int in
-  let (x_draw,y_draw) = Vector.center rm.player.pos position in
+  let (x_draw,y_draw) = Vector.center rm.player.e.pos position in
   match rm.tiles.(y).(x) with
   | Floor (im)
   | Wall (im) 
@@ -29,12 +28,13 @@ let draw_tile (win : Window.window) (rm : t) (x : int) (y : int) =
 
 let draw_room (win : Window.window) (rm : t) = 
   Array.iteri (fun y row -> Array.iteri (fun x tile -> draw_tile win rm x y) row) rm.tiles;
-  ignore(List.map (fun i -> match i.pos with |Position _ -> Item.draw win rm.player.pos i |_ -> ()) rm.items);
-  Player.draw win rm.player.pos rm.player
+  ignore(List.map (fun item -> match item.pos with |Position _ -> Item.draw win rm.player.e.pos item |_ -> ()) rm.items);
+  ignore(List.map (fun enemy -> Enemy.draw win rm.player.e.pos enemy)  rm.enemies);
+  Player.draw win rm.player.e.pos rm.player
 
 let entity_at_tile rm tile =
-  List.exists (fun x -> x.curr_tile = tile && match x.pos with |Inventory _ -> false |_ -> true) rm.items
-  || List.exists (fun (x:Enemy.t)-> x.curr_tile = tile) rm.enemies
+  List.exists (fun x -> x.e.curr_tile = tile && match x.pos with |Inventory _ -> false |_ -> true) rm.items
+  || List.exists (fun (x:Enemy.t)-> x.e.curr_tile = tile) rm.enemies
 
 let get_unused_inventory (rm : t) : int option =
   let rec create_list length = function
@@ -68,36 +68,42 @@ let get_item_slot (rm : t) idx : Item.t option =
 
 let scale_pos_pix pos = pos |> Vector.scale_vec 16. |> Vector.to_int
 
+let check_e_collisions (e1: Entity.e) (e2: Entity.e) = 
+  (Window.collision 
+     (Vector.add_ints (scale_pos_pix e1.pos) e1.bounding_box_pos) e1.bounding_box 
+     (Vector.add_ints (scale_pos_pix e2.pos) e2.bounding_box_pos) e2.bounding_box)
 
-let check_item_collision (player:Player.t) item = match item.pos with
-  |Position pos -> Window.collision 
-                     (Vector.add_ints (scale_pos_pix pos) item.bounding_box_pos) item.bounding_box 
-                     (Vector.add_ints (scale_pos_pix player.pos) player.bounding_box_pos) player.bounding_box
-  | _ -> false
-
-let check_wall_collisions (player:Player.t) (tile,(y,x)) = 
+let check_wall_collisions (e:Entity.e) (tile,(y,x)) = 
   (match tile with 
    | Floor _-> false 
-   | _-> true ) && Window.collision 
+   | _-> true ) && 
+  Window.collision 
     (16*x,16*y) (16,16) 
-    (Vector.add_ints (scale_pos_pix player.pos) player.bounding_box_pos) 
-    player.bounding_box
+    (Vector.add_ints (scale_pos_pix e.pos) e.bounding_box_pos) 
+    e.bounding_box
 
 let rec generate_tile_with_cords rm lst = match lst with
-  |(y,x)::t -> let ar = try([rm.tiles.(y).(x),(y,x)]) with e -> [] in ar @ generate_tile_with_cords rm t 
-  |[] -> []
+  | (y,x)::t -> let ar = try([rm.tiles.(y).(x),(y,x)]) with e -> [] 
+    in ar @ generate_tile_with_cords rm t 
+  | [] -> []
 
-let collision_with_player rm (player:Player.t) =
-  let items =  List.filter (check_item_collision player) rm.items in 
-  let (x,y) = player.curr_tile in 
+let collisions_with_entity rm (e:Entity.e) (ignore : Entity.e)=
+  let players = List.filter 
+      (fun (player:Player.t) -> check_e_collisions e player.e && player.e.pos <> ignore.pos) [rm.player] in
+  let enemies = List.filter 
+      (fun (enemy:Enemy.t) -> check_e_collisions e enemy.e && enemy.e.pos <> ignore.pos) (rm.enemies) in 
+  let items =  
+    List.filter 
+      (fun item -> match item.pos with 
+         | Inventory _ -> false
+         | _ -> check_e_collisions e item.e && item.e.pos <> ignore.pos) (rm.items) in 
+  let (x,y) = e.curr_tile in 
   let tile_array = [(y,x); (y,x+1); (y+1,x); (y-1,x); (y,x-1)] 
-                   |> generate_tile_with_cords rm
-  in 
-  let tiles = List.filter (check_wall_collisions player) tile_array in 
-  if List.length items <> 0 then Some (CItem (List.hd items))
-  else begin 
-    if List.length tiles <> 0 then let t,(x,y) =  List.hd tiles in Some (CWall t)
-    else None end 
+                   |> generate_tile_with_cords rm in 
+  let tiles = List.filter (check_wall_collisions e) tile_array in 
+  (List.map (fun item -> CItem item) items)@
+  (List.map (fun (tile,(a,b)) ->  CWall tile) tiles) @
+  (List.map (fun enemy -> CEnemy enemy) enemies) @ 
+  (List.map (fun player -> CPlayer player) players) 
 
 
-(*|| List.exists (fun (x:Enemy.t)-> x.curr_tile = player.curr_tile) rm.enemies*)

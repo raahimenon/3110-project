@@ -28,7 +28,7 @@ val greater : t -> t -> bool
 (** [print x] returns a representation of s.*)
 val print : t -> string
 
-val abs : t->t
+val abs_vec : t->t
 
 (** [add_ints x y] is the int vector that is formed when [x] and [y] are added,
     with addition taking place componentwise.*)
@@ -42,14 +42,20 @@ val sub_ints : s -> s -> s
     plane.*)
 val vec_of_dir : Entity.direction -> t
 
+(** [dir_of_vec vec] is direction most closely aligned with vector [vec]. *)
+val dir_of_vec : t -> Entity.direction
+
 (** [add sc x] is the float vector that is formed when each entry of [x] is
     multiplied with [sc].*)
 val scale_vec : float -> t -> t
 
-(** [add x y] is the float vector that is formed when [x] and [y] are 
+(** [subtract x y] is the float vector that is formed when [x] and [y] are 
     subtracted, with subtraction taking place componentwise.*)
 val subtract : t -> t -> t
 
+(** [distance x y] is the distance between [x] and [y] when considered as  
+    points in the euclidean plane.*)
+val distance : t -> t -> float 
 
 (** [center x y] is the float vector that represents the position of [y] when 
     centered with respect to vector [x] and the middle of the screen.*)

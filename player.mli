@@ -5,19 +5,9 @@ type player_state = Idle | Use_Item of direction*int| Move of direction | Attack
 type entity_id = int
 
 type player_type =  {
-  animations: Animations.animation list;
-  curr_anim: Animations.animation;
-  curr_frame_num: int;
-  direction: Entity.direction;
-  size : Entity.size_t;
-  bounding_box : Entity.size_t;
-  bounding_box_pos : Entity.size_t;
-  name : Entity.name_t;
-  frame : Entity.entity_frame;
-  pos : Entity.pos_t;
-  curr_tile : int*int;
+  e: Entity.e;
   tile_destination : int*int;
-  reach_dest : bool;
+  being_attacked : bool;
   id : entity_id;
   max_health : int;
   health : int;

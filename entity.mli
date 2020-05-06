@@ -29,8 +29,18 @@ module type Entity = sig
   type t 
   (** [draw win pos ent] draws an entity to the window [win] at position [pos]*)
   val draw: Window.window -> pos_t -> t -> unit
-
-  (** [update ent f] is an entity created by updating entity [ent] through
-      update function [f] *)
-  val update: t-> (t-> t) -> t
 end
+
+type e ={
+  animations: Animations.animation list;
+  curr_anim: Animations.animation;
+  curr_frame_num: int;
+  direction: direction;
+  size : size_t;
+  bounding_box : size_t;
+  bounding_box_pos : size_t;
+  name : name_t;
+  frame : entity_frame;
+  pos : pos_t;
+  curr_tile : int*int;
+}

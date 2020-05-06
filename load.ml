@@ -20,7 +20,7 @@ let rec room_from_entities (rm : Room.t) (entities : (int * int * int * int) lis
   | h::t -> 
     let id,x,y,health = h in
     let next_room = 
-      if id = 0 then {rm with player = {rm.player with pos = (x |> float_of_int, y|>float_of_int); curr_tile = (x,y); health = health}}
+      if id = 0 then {rm with player = {rm.player with e = {rm.player.e with pos = (x |> float_of_int, y|>float_of_int); curr_tile = (x,y); };health = health}}
       else rm in
     room_from_entities next_room t
 

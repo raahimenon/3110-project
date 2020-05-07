@@ -50,6 +50,14 @@ let draw_image (win : window) (im : Animations.image) (x : float) (y : float) =
     Sdlrect.make4 x y w h in
   Sdlrender.copy (snd win) ~texture ~dst_rect ()
 
+let draw_image_raw (win : window) (im : Animations.image) (x : float) (y : float) =
+  let w, h, texture = im in
+  let x = x *. (GameVars.tile_size) |> int_of_float in
+  let y = (y *. (GameVars.tile_size) |> int_of_float) in
+  let dst_rect = 
+    Sdlrect.make4 x y w h in
+  Sdlrender.copy (snd win) ~texture ~dst_rect ()
+
 let render (win : window) : unit = 
   Sdlrender.render_present (snd win)
 
@@ -106,8 +114,8 @@ let draw_hud_box (win : window) slot : unit =
   Sdlrender.set_draw_color rndr (255, 255, 255) 1;
   Sdlrender.draw_line2 rndr (ts + 2 * GameVars.hud_bezel_px, 0) (ts + 2 * GameVars.hud_bezel_px, h);
   Sdlrender.draw_rect rndr (Sdlrect.make4 (GameVars.hud_bezel_px - 3) ((2 * slot + 1) * (ts) - 2) (ts + 6) (ts + 6));
-  Sdlrender.draw_line2 rndr (w - ts - 2*GameVars.hud_bezel_px, 0) (w - ts - 2*GameVars.hud_bezel_px, h);
-  Sdlrender.draw_line2 rndr (w - ts - 2*GameVars.hud_bezel_px, h / 2) (w, h / 2);
+  Sdlrender.draw_line2 rndr (w - ts - 1 - 2*GameVars.hud_bezel_px, 0) (w - ts - 1- 2*GameVars.hud_bezel_px, h);
+  (* Sdlrender.draw_line2 rndr (w - ts - 2*GameVars.hud_bezel_px, h / 2) (w, h / 2); *)
   Sdlrender.set_draw_color rndr (0, 0, 0) 1
 
 let health_col_ratio ratio = 

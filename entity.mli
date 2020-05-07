@@ -44,3 +44,5 @@ type e ={
   pos : pos_t;
   curr_tile : int*int;
 }
+
+val get_anim : e -> direction -> string -> Animations.animation

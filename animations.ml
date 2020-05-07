@@ -11,6 +11,7 @@ let load_image f rndr: image =
 
 let load_animation f name rndr : animation = 
   let files = Sys.readdir f in
+  Array.sort String.compare files;
   name, Array.map (fun file -> load_image (f^"/"^file) rndr) files
 
 let load_direction f d rndr : animation list = 
@@ -38,8 +39,6 @@ let get_icon i is =
 let next_frame i anim = 
   let anim = snd anim in
   if i + 1 >= Array.length anim then 0 else (i + 1)
-
-let curr_frame i anim = (snd anim).(i)
 
 let size_im (im : image) : (int * int) = 
   let w,h,_ = im in w,h

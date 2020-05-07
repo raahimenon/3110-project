@@ -22,3 +22,10 @@ type e ={
   pos : pos_t;
   curr_tile : int*int;
 }
+
+let get_anim (ent:e) (dir : direction) (name:string) : Animations.animation =
+  match dir with
+  | Down ->  Animations.anim_from_dir_name ent.animations "down" name
+  | Up -> Animations.anim_from_dir_name ent.animations "up" name
+  | Right -> Animations.anim_from_dir_name ent.animations "right" name
+  | Left -> Animations.anim_from_dir_name ent.animations "left" name

@@ -35,6 +35,11 @@ val clear_white : window -> unit
     position (x,y) in tiled coordinates with a scale factor of GameVars.scale *)
 val draw_image : window -> Animations.image -> float -> float -> unit
 
+(** [draw_image_raw w i x y] draws image [i] to the buffer for window [w] at 
+    position (x,y) in tiled coordinates with a scale factor of GameVars.scale,
+    without correcting for height shift by tilesize *)
+val draw_image_raw : window -> Animations.image -> float -> float -> unit
+
 (** [render w] renders the draw buffer for window [w]*)
 val render : window -> unit
 

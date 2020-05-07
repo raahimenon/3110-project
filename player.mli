@@ -1,6 +1,9 @@
 open Entity
 type stat_type = Combat of Combat.t | Buff of Buff.t
-type player_state = Idle | Use_Item of direction*int| Move of direction | Attack of direction
+type player_state = Idle 
+                  | Use_Item of direction*int
+                  | Move of direction 
+                  | Attack of direction*int*(Animations.animation option)
                   | Interact of direction*int
 type entity_id = int
 
@@ -17,9 +20,8 @@ type player_type =  {
   attack : int;
   defence : int;
   paused : bool;
+  enemy_buffer : entity_id list;
 }
 module Player : Entity with type t = player_type
 
 val make_player : name_t -> entity_id -> Window.window -> player_type
-
-val get_anim : player_type -> Entity.direction -> string -> Animations.animation

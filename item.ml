@@ -45,7 +45,7 @@ let make_item name id (win: Window.window) x y =
         bounding_box_pos  = (4,1);
         direction = Down;
         name = name;
-        frame = Animations.curr_frame 0 curr_anim; 
+        frame = Animations.frame curr_anim 0; 
         pos = (float_of_int x, float_of_int y);
         curr_tile = x, y;};
     pos = Position (float_of_int x, float_of_int y);
@@ -53,7 +53,11 @@ let make_item name id (win: Window.window) x y =
     unique_stats = Buff {
         max_durability = 2;
         durability = 2;
-        effect = [Health 30]
+        effect = [Health 30];
       };
     in_use = false
   }
+
+let is_combat_item i = match i.unique_stats with
+  | Combat _ -> true
+  | Buff _ -> false

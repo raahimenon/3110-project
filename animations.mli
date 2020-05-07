@@ -30,9 +30,6 @@ val get_icon : string -> icon list -> image
     that it is currently on frame number [i] (assuming the animation loops) *)
 val next_frame : int -> animation -> int
 
-(** [curr_frame i a] is the image at frame [i] in animation [a] *)
-val curr_frame : int -> animation -> image
-
 (** [im_to_str i] converts image [i] into a string formatted lke a matrix where
     position i,j is the comma delimited rgba value of the pixel, columns are 
     split by spaces, and rows by newlines *)

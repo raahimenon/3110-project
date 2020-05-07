@@ -3,7 +3,10 @@ open Vector
 type stat_type = Combat of Combat.t | Buff of Buff.t
 type entity_id = int
 type direction = |Up |Down |Left |Right
-type player_state = Idle | Use_Item of Entity.direction*int | Move of Entity.direction | Attack of Entity.direction
+type player_state = Idle 
+                  | Use_Item of Entity.direction*int 
+                  | Move of Entity.direction 
+                  | Attack of Entity.direction*int*(Animations.animation option)
                   | Interact of Entity.direction*int
 
 type player_type =  {
@@ -19,6 +22,7 @@ type player_type =  {
   attack: int;
   defence: int;
   paused: bool;
+  enemy_buffer: entity_id list;
 }
 
 module Player : (Entity with type t = player_type)  = struct
@@ -26,7 +30,24 @@ module Player : (Entity with type t = player_type)  = struct
   let update t f = f t
   let draw win center t =  
     let (x_draw,y_draw) = Vector.center center t.e.pos in 
-    Window.draw_image win (snd t.e.curr_anim).(t.e.curr_frame_num) x_draw (y_draw)
+    let x_front, y_front = match t.e.direction with 
+      | Right -> 0.5,0. | Left -> -0.5,0. | Up -> 0., -0.5 | Down -> 0., 0.5 in
+    if y_front < 0. || x_front < 0. then begin
+      begin match t.state with
+        | Attack (_, _, Some anim) -> 
+          Window.draw_image win 
+            (Animations.frame anim t.e.curr_frame_num)
+            (x_draw +. x_front) (y_draw +. y_front)
+        | _ -> () end;
+      Window.draw_image win (snd t.e.curr_anim).(t.e.curr_frame_num) x_draw (y_draw) end
+    else begin
+      Window.draw_image win (snd t.e.curr_anim).(t.e.curr_frame_num) x_draw (y_draw);
+      begin match t.state with
+        | Attack (_, _, Some anim) -> 
+          Window.draw_image win 
+            (Animations.frame anim t.e.curr_frame_num)
+            (x_draw +. x_front) (y_draw +. y_front)
+        | _ -> () end end
 end
 
 let make_player name id (win : Window.window)= 
@@ -42,7 +63,7 @@ let make_player name id (win : Window.window)=
        bounding_box = (16,13);
        bounding_box_pos = (0,2);
        name = name;
-       frame = Animations.curr_frame 0 curr_anim; 
+       frame = Animations.frame curr_anim 0; 
        pos = 1.,1.;
        curr_tile = 1,1;};
     id = id;
@@ -56,11 +77,6 @@ let make_player name id (win : Window.window)=
     attack = 10;
     defence = 10;
     paused = false;
+    enemy_buffer = [];
   }
 
-let get_anim (player:player_type) (dir : Entity.direction) (name:string) : Animations.animation =
-  match dir with
-  | Down ->  Animations.anim_from_dir_name player.e.animations "down" name
-  | Up -> Animations.anim_from_dir_name player.e.animations "up" name
-  | Right -> Animations.anim_from_dir_name player.e.animations "right" name
-  | Left -> Animations.anim_from_dir_name player.e.animations "left" name

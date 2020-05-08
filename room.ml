@@ -104,6 +104,5 @@ let collisions_with_entity rm (e:Entity.e) (ignore : Entity.e)=
   (List.map (fun item -> CItem item) items)@
   (List.map (fun (tile,(a,b)) ->  CWall tile) tiles) @
   (List.map (fun enemy -> CEnemy enemy) enemies) @ 
-  (List.map (fun player -> CPlayer player) players) 
-
+  (List.map (fun player -> CPlayer player) players)
 

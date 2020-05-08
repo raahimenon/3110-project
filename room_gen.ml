@@ -318,6 +318,19 @@ let generate_room (seed : int) (input : Room.tile array array)
   done;
   print_endline "success!!!";
 
+  (* Add bounding walls *)
+  let bounded_tiles = 
+    Array.make_matrix (Array.length !tiles + 2) (Array.length !tiles.(0) + 2)
+      (Room.Wall (Animations.load_image "./sprites/room/wall.bmp"
+                    (Window.get_renderer window)))
+  in
+  for i = 0 to Array.length !tiles - 1 do
+    for j = 0 to Array.length !tiles.(0) - 1 do
+      bounded_tiles.(i + 1).(j + 1) <- !tiles.(i).(j)
+    done
+  done;
+  tiles := bounded_tiles;
+
   (* TODO: Clean floating rooms *)
 
 
@@ -339,6 +352,7 @@ let generate_room (seed : int) (input : Room.tile array array)
   let items = [] in
 
   {
+    seed = !attempt_seed;
     player = {(Player.make_player "link" 0 window) with tile_destination = !entry_coords};
     enemies = enemies;
     items = items;
@@ -371,9 +385,7 @@ let simple_gen (seed : int) (window : Window.window): Room.t =
   Random.init seed;
 
   generate_room (Random.int 20010827) (big_chungus_input) (3) (20) (20) (0) (window)
-  |> (fun room -> print_endline ""; print_int seed;
-       print_int (Array.length room.tiles); print_endline "";
-       print_int (Array.length room.tiles.(0)); print_endline "";
+  |> (fun room -> print_endline ""; print_int seed; print_endline "";
 
        (room.tiles |> Array.iter
           (fun row ->

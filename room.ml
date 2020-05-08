@@ -9,6 +9,7 @@ type tile =
   | Boundary
 type t = 
   {
+    seed: int;
     player: Player.t;
     enemies: Enemy.t list;
     items: Item.t list;

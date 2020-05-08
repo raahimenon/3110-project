@@ -1,48 +1,48 @@
 let player_json (p : Player.Player.t) : string =
-  let pos = match p.pos with (x,y) -> [|x;y|] in
-  "{"
-  ^"\"id\": "^Int.to_string p.id^", "
-  ^"\"x\": "^Int.to_string (int_of_float pos.(0))^", "
-  ^"\"y\": "^Int.to_string (int_of_float pos.(1))^", "
-  ^"\"health\": "^Int.to_string p.health
-  ^"}"
+  let pos = match p.e.pos with (x,y) -> [|x;y|] in
+  "\t\t{\n"
+  ^"\t\t\t\"id\": "^Int.to_string p.id^",\n"
+  ^"\t\t\t\"x\": "^Int.to_string (int_of_float pos.(0))^",\n"
+  ^"\t\t\t\"y\": "^Int.to_string (int_of_float pos.(1))^",\n"
+  ^"\t\t\t\"health\": "^Int.to_string p.health
+  ^"\n\t\t}"
 
-let enemy_json (e : Enemy.Enemy.t) : string =
-  let pos = match e.pos with (x, y) -> [|x;y|] in
-  "{"
-  ^"\"id\": "^Int.to_string e.id^", "
-  ^"\"x\": "^Int.to_string (int_of_float pos.(0))^", "
-  ^"\"y\": "^Int.to_string (int_of_float pos.(1))^", "
-  ^"\"health\": "^Int.to_string e.health
-  ^"}"
+let enemy_json (enemy : Enemy.Enemy.t) : string =
+  let pos = match enemy.e.pos with (x, y) -> [|x;y|] in
+  "\t\t{\n"
+  ^"\t\t\t\"id\": "^Int.to_string enemy.id^",\n"
+  ^"\t\t\t\"x\": "^Int.to_string (int_of_float pos.(0))^",\n"
+  ^"\t\t\t\"y\": "^Int.to_string (int_of_float pos.(1))^",\n"
+  ^"\t\t\t\"health\": "^Int.to_string enemy.health
+  ^"\n\t\t}"
 
 let item_json (i : Item.Item.t) : string =
   let pos = match i.pos with 
-    | Position {x;y} -> [|x;y|]
-    | Inventory -> [|-1.;-1.|]
+    | Inventory {index = i} -> [|-1.; float_of_int i|]
+    | Position (x,y) -> [|x;y|]
   in let dur = match i.unique_stats with
       | Buff {max_durability;durability;effect} -> durability
       | other -> -1
   in
-  "{"
-  ^"\"id\": "^Int.to_string i.id^", "
-  ^"\"x\": "^Int.to_string (int_of_float pos.(0))^", "
-  ^"\"y\": "^Int.to_string (int_of_float pos.(1))^", "
-  ^"\"health\": "^Int.to_string dur
-  ^"}"
+  "\t\t{\n"
+  ^"\t\t\t\"id\": "^Int.to_string i.id^",\n"
+  ^"\t\t\t\"x\": "^Int.to_string (int_of_float pos.(0))^",\n"
+  ^"\t\t\t\"y\": "^Int.to_string (int_of_float pos.(1))^",\n"
+  ^"\t\t\t\"health\": "^Int.to_string dur
+  ^"\n\t\t}"
 
 (** [room_json r] returns a [string] representing [room] [r] in json 
     form. *)
 let room_json (r : Room.t) : string =
-  "{"
-  ^"\"seed\": 0, "
-  ^"\"entities\": ["
+  "{\n"
+  ^"\t\"seed\": 0,\n"
+  ^"\t\"entities\": [\n"
   ^player_json r.player^
-  (if List.length r.enemies > 0 then ", " else "")^
-  String.concat ", " (List.map enemy_json r.enemies)^
-  (if List.length r.items > 0 then ", " else "")^
-  String.concat ", " (List.map item_json r.items)
-  ^"]}"
+  (if List.length r.enemies > 0 then ",\n" else "")^
+  String.concat ",\n" (List.map enemy_json r.enemies)^
+  (if List.length r.items > 0 then ",\n" else "")^
+  String.concat ",\n" (List.map item_json r.items)
+  ^"\n\t]\n}"
 
 (** [save name] creates a save file in the [saves] folder with name 
     [name] if possible. If [name] contains non-alphanumeric characters or is 

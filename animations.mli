@@ -1,30 +1,34 @@
 type image = int * int * Sdltexture.t
+type icon = string * image
 type animation = string * image array
 
-(** [load_image f] is the [image] generated from the text file [f] relative to 
+(** [load_image f r] is the [image] generated from the text file [f] relative to 
     the current filepath. [f] must be formatted like a matrix where position
     i,j is the comma delimited rgba value of the pixel, columns are split by
     spaces and rows by newlines*)
 val load_image : string -> Sdlrender.t -> image
 
-(** [load_animation f n] is the [animation] with name [n] generated from the 
+(** [load_animation f n r] is the [animation] with name [n] generated from the 
     images stored in folder [f] relative to the current filepath *)
 val load_animation : string -> string -> Sdlrender.t -> animation
 
-(** [load_direction f d] is the [animation list] generated from the animations
+(** [load_direction f d r] is the [animation list] generated from the animations
     stored in folder [f] with direction [d] relative to the current filepath *)
 val load_direction : string -> string -> Sdlrender.t -> animation list
 
-(** [load_directions o] is the [animation list] generated from the animations 
+(** [load_directions o r] is the [animation list] generated from the animations 
     of object with name [o] *)
 val load_directions : string -> Sdlrender.t -> animation list
+
+(** [load_icons r] is the list of icons and their names in the misc folder*)
+val load_icons : Sdlrender.t -> (string*image) list
+
+(** [get_icon i is] is the image of the icon named [i] from icon list [is] *)
+val get_icon : string -> icon list -> image
 
 (** [next_frame i a] is the next frame index next image in animation [a] given 
     that it is currently on frame number [i] (assuming the animation loops) *)
 val next_frame : int -> animation -> int
-
-(** [curr_frame i a] is the image at frame [i] in animation [a] *)
-val curr_frame : int -> animation -> image
 
 (** [im_to_str i] converts image [i] into a string formatted lke a matrix where
     position i,j is the comma delimited rgba value of the pixel, columns are 

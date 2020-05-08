@@ -1,4 +1,5 @@
 type image = int * int * Sdltexture.t
+type icon = string*image
 type animation = string * image array
 
 let load_image f rndr: image = 
@@ -10,6 +11,7 @@ let load_image f rndr: image =
 
 let load_animation f name rndr : animation = 
   let files = Sys.readdir f in
+  Array.sort String.compare files;
   name, Array.map (fun file -> load_image (f^"/"^file) rndr) files
 
 let load_direction f d rndr : animation list = 
@@ -24,11 +26,19 @@ let load_directions o rndr: animation list =
   let left = try load_direction (o^"left/") "left" rndr with e -> [] in
   down @ up @ left @ right
 
+let load_icons rndr : icon list = 
+  let dir = "./sprites/misc/" in
+  Array.map 
+    (fun i -> (String.sub i 0 (String.rindex i '.')), load_image (dir^i) rndr)
+    (Sys.readdir dir)
+  |> Array.to_list
+
+let get_icon i is = 
+  List.assoc i is
+
 let next_frame i anim = 
   let anim = snd anim in
   if i + 1 >= Array.length anim then 0 else (i + 1)
-
-let curr_frame i anim = (snd anim).(i)
 
 let size_im (im : image) : (int * int) = 
   let w,h,_ = im in w,h

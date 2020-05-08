@@ -242,7 +242,6 @@ let generate_room (seed : int) (input : Room.tile array array)
 
   (* Generate sample space list *)
   let samples = sample_space input sample_dim rotations_on reflections_on in
-  print_endline ("\nsample count: "^(string_of_int (Array.length samples)));
 
   (* Weights *)
   weight_ref := samples |> Array.map (count_instances samples);
@@ -301,12 +300,14 @@ let generate_room (seed : int) (input : Room.tile array array)
 
 
   (* TODO: Place entrance and exit *)
-  let entry_coords = ref (0, 0) in
+  let entry_coords = ref (0., 0.) in
   for i = 0 to Array.length !tiles - 1 do
     for j = 0 to Array.length !tiles.(0) - 1 do
-      match !tiles.(i).(j) with
-      | Floor f -> entry_coords := (i, j)
-      | other -> ()
+      if (!entry_coords = (0., 0.))
+      then (match !tiles.(i).(j) with
+          | Floor f -> entry_coords := (float_of_int i, float_of_int j)
+          | other -> ())
+      else ()
     done
   done;
 
@@ -316,10 +317,11 @@ let generate_room (seed : int) (input : Room.tile array array)
   (* TODO: Place items *)
   (* TODO: respond to enemy density and/or entrance/exit distance *)
   let items = [] in
+  let basic_player = (Player.make_player "link" 0 window) in
 
   {
     seed = !attempt_seed;
-    player = {(Player.make_player "link" 0 window) with tile_destination = !entry_coords};
+    player = {basic_player with e = {basic_player.e with pos = !entry_coords}};
     enemies = enemies;
     items = items;
     tiles = !tiles;

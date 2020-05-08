@@ -8,6 +8,7 @@ type tile =
   | Exit of Animations.image
 type t = 
   {
+    seed: int;
     player: Player.t;
     enemies: Enemy.t list;
     items: Item.t list;

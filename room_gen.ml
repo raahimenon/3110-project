@@ -50,10 +50,26 @@ let sample_space (input : Room.tile array array) (sample_dim : int)
           Array.concat [s; rot90; rot180; rot270])
       else (fun s -> s))
 
+let weight_ref : int array ref = ref [||]
+
 (** [get_entropy elem] returns the number of possibilities for a given element 
     in the wave *)
-let get_entropy (elem : bool array) : int =
-  Array.fold_left (fun prev b -> prev + Bool.to_int b) 0 elem
+let get_entropy (elem : bool array) : float =
+  let total_pos =
+    Array.fold_left (fun prev b -> prev +. (Bool.to_float b)) 0. elem
+  in
+  let total_SE = ref 0. in
+  Array.iter2
+    (fun valid weight ->
+       if (not valid)
+       then ()
+       else (let p = (float_of_int weight)
+                     /. total_pos in
+             total_SE := !total_SE
+                         -. (p *. (log p) /. (log 2.) /. (float_of_int weight))))
+    elem !weight_ref;
+
+  !total_SE
 
 (** [get_indices condition a] returns the indices of all elements in array 
     [a] that satisfy [condition]. *)
@@ -77,12 +93,18 @@ let get_indices2 (condition : 'a -> bool) (a : 'a array array)
 
   Array.init (Queue.length temp) (fun i -> Queue.pop temp)
 
-(* Collapses the wave function. Raises [Failure] if collapse leads to a 
-   contradictory state. *)
 let iters = ref 0
+
+let count_instances (collection : 'a array) (elem : 'a) : int =
+  let count = ref 0 in
+  for i = 0 to Array.length collection - 1 do
+    if collection.(i) = elem then count := !count + 1 else ()
+  done;
+  !count
+
 let rec collapse_loop (samples : Room.tile array array array)
     (wave : bool array array array) (output : Room.tile option array array)
-    (seed : int) (minimum_entropy : int) : Room.tile array array =
+    (seed : int) (minimum_entropy : float) : Room.tile array array =
   (* Initialize RNG TODO: does this need to be done in-function? *)
   Random.init seed;
 
@@ -90,7 +112,7 @@ let rec collapse_loop (samples : Room.tile array array array)
   (* Identify potential wave sections *)
   let candidate_indices =
     (* All sections with desired entropy *)
-    (get_indices2 (fun e -> (get_entropy e) = minimum_entropy) wave)
+    (get_indices2 (fun e -> Float.equal (get_entropy e) minimum_entropy) wave)
     (* Filter out collapsed sections *)
     |> Array.to_list
     |> List.filter_map
@@ -117,7 +139,7 @@ let rec collapse_loop (samples : Room.tile array array array)
     wave.(target_coords.(0)).(target_coords.(1)) |> get_indices (fun s -> s)
   in
 
-  print_endline "get random sample";
+  print_endline ("get random sample of " ^ (string_of_int (Array.length sample_indices)));
   (* Randomly select a sample *)
   let sample_index = 
     Array.get sample_indices (Random.int (Array.length sample_indices))
@@ -172,7 +194,7 @@ let rec collapse_loop (samples : Room.tile array array array)
   done;
 
   (* Recalculate minimum entropy *)
-  let new_min_ent = ref (Array.length samples + 1) in
+  let new_min_ent = ref (Float.max_float) in
   for i = 0 to (Array.length wave - 1) do
     for j = 0 to (Array.length wave.(i) - 1) do
       (* Check that section has not been collapsed *)
@@ -188,12 +210,14 @@ let rec collapse_loop (samples : Room.tile array array array)
       (* If uncollapsed, calculate entropy and compare to minimum *)
       if (!fully_collapsed)
       then ()
-      else (new_min_ent := min !new_min_ent (get_entropy wave.(i).(j)))
+      else (new_min_ent := min !new_min_ent (get_entropy wave.(i).(j)));
+
+      (* Check for contradictions *)
+      if (not (Array.mem true wave.(i).(j)))
+      then failwith "contradiction"
+      else ();
     done
   done;
-
-  (* Fail if any entropy value reaches 0, indicating contradiction *)
-  if !new_min_ent = 0 then failwith "contradiction" else ();
 
   (*TODO: Remove debug prints bundle *)
   let ctiles = ref 0 in
@@ -208,7 +232,7 @@ let rec collapse_loop (samples : Room.tile array array array)
   print_string ("[" ^ (string_of_float (Sys.time ()) ^ "]"));
   print_string ("\t Prog: " ^ (string_of_int !iters));
   print_string ("\t CTiles: " ^ (string_of_int !ctiles) ^ " / " ^ (string_of_int ((Array.length output) * (Array.length output.(0)))));
-  print_string ("\t MinEnt: " ^ (string_of_int !new_min_ent));
+  print_string ("\t MinEnt: " ^ (string_of_float !new_min_ent));
   print_endline "";
 
   (* Check if any uncollapsed tiles remain *)
@@ -243,6 +267,9 @@ let generate_room (seed : int) (input : Room.tile array array)
   let samples = sample_space input sample_dim rotations_on reflections_on in
   print_endline ("\nsample count: "^(string_of_int (Array.length samples)));
 
+  (* Weights *)
+  weight_ref := samples |> Array.map (count_instances samples);
+
   (* 3D boolean array represents the wave *)
   let wave = Array.make (output_rows - sample_dim + 1)
       (Array.make (output_cols - sample_dim + 1) 
@@ -265,8 +292,8 @@ let generate_room (seed : int) (input : Room.tile array array)
         print_endline "attempt";
         let w_cop = wave |> Array.map (Array.map Array.copy) in
         let o_cop = output |> Array.map Array.copy in
-        try tiles := collapse_loop (samples) (w_cop) (o_cop) (!attempt_seed) (Array.length samples)
-        with Failure f -> (iters := 0; Random.init seed; attempt_seed := Random.bits ();
+        try tiles := collapse_loop (samples) (w_cop) (o_cop) (!attempt_seed) (get_entropy wave.(0).(0))
+        with Failure f -> (iters := 0; Random.init !attempt_seed; attempt_seed := Random.bits ();
                            print_string ("Attempt " ^ (string_of_int attempt)
                                          ^ " failed: " ^ f ^ "\n"));
 
@@ -303,35 +330,6 @@ let generate_room (seed : int) (input : Room.tile array array)
 let simple_gen (seed : int) (window : Window.window): Room.t =
   let f = Room.Floor (Animations.load_image "./sprites/room/floor.bmp" (Window.get_renderer window)) in
   let w = Room.Wall (Animations.load_image "./sprites/room/wall.bmp" (Window.get_renderer window)) in
-  let input =
-    [|
-      [| w ; w ; f ; w ; w ; w ; w ; w ; f ; w |];
-      [| w ; w ; f ; w ; w ; w ; f ; f ; f ; w |];
-      [| w ; f ; f ; f ; f ; f ; f ; w ; f ; w |];
-      [| w ; f ; w ; w ; w ; w ; f ; w ; f ; w |];
-      [| f ; f ; w ; w ; w ; w ; f ; w ; f ; w |];
-      [| w ; f ; w ; w ; w ; w ; f ; w ; f ; w |];
-      [| w ; f ; f ; f ; f ; w ; f ; w ; f ; w |];
-      [| w ; f ; w ; w ; f ; f ; f ; f ; f ; w |];
-      [| w ; f ; f ; f ; f ; w ; w ; f ; w ; w |];
-      [| w ; w ; w ; f ; w ; w ; w ; f ; w ; w |];
-    |]
-  in
-  let total_2_coverage_input =
-    [|
-      [| w ; w ; f ; f ; f ; w ; w ; f |];
-      [| w ; w ; f ; f ; w ; w ; f ; w |];
-      [| w ; w ; f ; f ; w ; w ; f ; w |];
-    |] 
-  in
-  let trivial_3_input = 
-    [|
-      [| f ; w ; f ; w |];
-      [| w ; f ; w ; f |];
-      [| f ; w ; f ; w |];
-      [| w ; f ; w ; f |];
-    |]
-  in
   let big_chungus_input = 
     [|
       [| w ; w ; w ; f ; w ; w ; w ; w ; w ; w ; w ; w ; f ; w ; w ; w |];
@@ -352,8 +350,9 @@ let simple_gen (seed : int) (window : Window.window): Room.t =
       [| w ; w ; w ; f ; w ; w ; w ; w ; w ; w ; w ; w ; f ; w ; w ; w |];
     |]
   in
+  Random.init seed;
 
-  generate_room (seed) (big_chungus_input) (3) (12) (15) (0) (window)
+  generate_room (Random.int 20010827) (big_chungus_input) (3) (30) (30) (0) (window)
   |> (fun room -> 
       print_int (Array.length room.tiles); print_endline "";
       print_int (Array.length room.tiles.(0)); print_endline "";

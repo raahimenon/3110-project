@@ -7,6 +7,9 @@ open Combat
 open Item
 
 let wfc_test () = 
+  Random.self_init ();
+  let random_seed = Random.bits () in
+
   let () = print_string "WHEE" in
 
   let window = Window.create_window "3110 Project" (GameVars.width * (int_of_float GameVars.tile_size)) (GameVars.height * (int_of_float GameVars.tile_size)) in
@@ -15,7 +18,7 @@ let wfc_test () =
   let () = Window.render window in
   Gamestate.game_loop 
     {running = true;
-     current_room = Room_gen.simple_gen 1606842743 window;
+     current_room = Room_gen.simple_gen random_seed window;
      window = window;
      input = [];
     } (Window.get_time ());

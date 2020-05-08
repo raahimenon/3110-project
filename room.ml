@@ -78,14 +78,18 @@ let check_wall_collisions (e:Entity.e) (tile,(y,x)) =
    | Floor _-> false 
    | _-> true ) && 
   Window.collision 
-    (16*x,16*y) (16,16) 
+    (16*x + 2,16*y + 2) (12,12) 
     (Vector.add_ints (scale_pos_pix e.pos) e.bounding_box_pos) 
     e.bounding_box
 
 let rec generate_tile_with_cords rm lst = match lst with
-  | (y,x)::t -> let ar = try([rm.tiles.(y).(x),(y,x)]) with e -> [] 
+  | (y,x)::t -> let ar = try ([rm.tiles.(y).(x),(y,x)]) with e -> [] 
     in ar @ generate_tile_with_cords rm t 
   | [] -> []
+
+let floor f = Float.floor f |> int_of_float
+
+let ciel f = Float.ceil f |> int_of_float
 
 let collisions_with_entity rm (e:Entity.e) (ignore : Entity.e)=
   let players = List.filter 
@@ -97,8 +101,11 @@ let collisions_with_entity rm (e:Entity.e) (ignore : Entity.e)=
       (fun item -> match item.pos with 
          | Inventory _ -> false
          | _ -> check_e_collisions e item.e && item.e.pos <> ignore.pos) (rm.items) in 
-  let (x,y) = e.curr_tile in 
-  let tile_array = [(y,x); (y,x+1); (y+1,x); (y-1,x); (y,x-1)] 
+  let (x,y) = e.pos in 
+  let tile_array = [(floor y, floor x);
+                    (floor y, ciel x);
+                    (ciel y, ciel x);
+                    (ciel y, floor x)] 
                    |> generate_tile_with_cords rm in 
   let tiles = List.filter (check_wall_collisions e) tile_array in 
   (List.map (fun item -> CItem item) items)@

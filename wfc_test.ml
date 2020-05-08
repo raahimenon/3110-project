@@ -16,12 +16,15 @@ let wfc_test () =
 
   let () = Window.clear window in
   let () = Window.render window in
+  let time = Window.get_time () in
   Gamestate.game_loop 
     {running = true;
-     current_room = Room_gen.simple_gen random_seed window;
+     current_room = Room_gen.simple_gen 88230192520 window;
      window = window;
      input = [];
-    } (Window.get_time ());
+     icons = Animations.load_icons (Window.get_renderer window);
+     last_anim_frame = time
+    } time;
   Window.wait 5;
   Window.exit_window window
 

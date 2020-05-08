@@ -366,7 +366,7 @@ let simple_gen (seed : int) (window : Window.window): Room.t =
             row |> Array.iter
               (fun elem ->
                  match elem with
-                 | Room.Floor a -> print_string "___"
-                 | Room.Wall a -> print_string "WWW"
-                 | other -> print_string "???");
+                 | Room.Floor a -> print_string "_"
+                 | Room.Wall a -> print_string "W"
+                 | other -> print_string "?");
             print_string "\n")); room)

@@ -162,8 +162,12 @@ let rec collapse_loop (samples : Room.tile array array array)
   done;
 
   (* Adjust wave possibilities *)
-  for i = 0 to Array.length wave - 1 do
-    for j = 0 to Array.length wave.(0) - 1 do
+  for i = max 0 (target_coords.(0) - (Array.length samples.(0)) + 1)
+    to min (Array.length wave - 1)
+        (target_coords.(0) + (Array.length samples.(0)) - 1) do
+    for j = max 0 (target_coords.(1) - (Array.length samples.(0).(0)) + 1)
+      to min (Array.length wave.(0) - 1)
+          (target_coords.(1) + (Array.length samples.(0).(0)) - 1) do
       (* Iterate across each sample *)
       wave.(i).(j)
       <- (samples |> Array.map
@@ -352,7 +356,7 @@ let simple_gen (seed : int) (window : Window.window): Room.t =
   in
   Random.init seed;
 
-  generate_room (Random.int 20010827) (big_chungus_input) (3) (30) (30) (0) (window)
+  generate_room (Random.int 20010827) (big_chungus_input) (3) (12) (15) (0) (window)
   |> (fun room -> 
       print_int (Array.length room.tiles); print_endline "";
       print_int (Array.length room.tiles.(0)); print_endline "";

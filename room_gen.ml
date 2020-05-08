@@ -356,17 +356,17 @@ let simple_gen (seed : int) (window : Window.window): Room.t =
   in
   Random.init seed;
 
-  generate_room (Random.int 20010827) (big_chungus_input) (3) (12) (15) (0) (window)
-  |> (fun room -> 
-      print_int (Array.length room.tiles); print_endline "";
-      print_int (Array.length room.tiles.(0)); print_endline "";
+  generate_room (Random.int 20010827) (big_chungus_input) (2) (20) (20) (0) (window)
+  |> (fun room -> print_endline ""; print_int seed;
+       print_int (Array.length room.tiles); print_endline "";
+       print_int (Array.length room.tiles.(0)); print_endline "";
 
-      (room.tiles |> Array.iter
-         (fun row ->
-            row |> Array.iter
-              (fun elem ->
-                 match elem with
-                 | Room.Floor a -> print_string "___"
-                 | Room.Wall a -> print_string "WWW"
-                 | other -> print_string "???");
-            print_string "\n")); room)
+       (room.tiles |> Array.iter
+          (fun row ->
+             row |> Array.iter
+               (fun elem ->
+                  match elem with
+                  | Room.Floor a -> print_string "___"
+                  | Room.Wall a -> print_string "WWW"
+                  | other -> print_string "???");
+             print_string "\n")); room)

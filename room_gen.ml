@@ -69,7 +69,7 @@ let get_entropy (elem : bool array) : float =
                          -. (p *. (log p) /. (log 2.) /. (float_of_int weight))))
     elem !weight_ref;
 
-  !total_SE
+  if (Array.mem true elem) then !total_SE else -1.
 
 (** [get_indices condition a] returns the indices of all elements in array 
     [a] that satisfy [condition]. *)
@@ -212,14 +212,14 @@ let rec collapse_loop (samples : Room.tile array array array)
       done;
 
       (* If uncollapsed, calculate entropy and compare to minimum *)
-      if (!fully_collapsed)
+      if (!fully_collapsed || ((get_entropy wave.(i).(j)) < 0.))
       then ()
       else (new_min_ent := min !new_min_ent (get_entropy wave.(i).(j)));
-
+(*
       (* Check for contradictions *)
-      if (not (Array.mem true wave.(i).(j)))
-      then failwith "contradiction"
-      else ();
+      if (not (!fully_collapsed) && not (Array.mem true wave.(i).(j)))
+      then (failwith "contradiction")
+      else ();*)
     done
   done;
 
@@ -244,9 +244,16 @@ let rec collapse_loop (samples : Room.tile array array array)
   (* If incomplete, keep going *)
   then (collapse_loop samples wave output (Random.int 20010827) !new_min_ent)
   (* If complete, unbind tiles from options and return *)
-  else output |> Array.map
-         (fun row -> row |> Array.to_list |> List.filter_map
-                       (fun o -> o) |> Array.of_list)
+  else (for i = 0 to Array.length output - 1 do
+          for j = 0 to Array.length output.(0) - 1 do
+            match output.(i).(j) with
+            | None -> output.(i).(j) <- Some samples.(0).(0).(0)
+            | Some t -> ()
+          done;
+        done;
+        (output |> Array.map
+           (fun row -> row |> Array.to_list |> List.filter_map
+                         (fun o -> o) |> Array.of_list)))
 
 (** Central method. Too sleepy to document. Haven't even test it yet. *)
 let generate_room (seed : int) (input : Room.tile array array)
@@ -315,7 +322,14 @@ let generate_room (seed : int) (input : Room.tile array array)
 
 
   (* TODO: Place entrance and exit *)
-
+  let entry_coords = ref (0, 0) in
+  for i = 0 to Array.length !tiles - 1 do
+    for j = 0 to Array.length !tiles.(0) - 1 do
+      match !tiles.(i).(j) with
+      | Floor f -> entry_coords := (i, j)
+      | other -> ()
+    done
+  done;
 
   (* TODO: Place enemies *)
   let enemies = [] in
@@ -325,7 +339,7 @@ let generate_room (seed : int) (input : Room.tile array array)
   let items = [] in
 
   {
-    player = Player.make_player "link" 0 window;
+    player = {(Player.make_player "link" 0 window) with tile_destination = !entry_coords};
     enemies = enemies;
     items = items;
     tiles = !tiles;
@@ -356,7 +370,7 @@ let simple_gen (seed : int) (window : Window.window): Room.t =
   in
   Random.init seed;
 
-  generate_room (Random.int 20010827) (big_chungus_input) (2) (20) (20) (0) (window)
+  generate_room (Random.int 20010827) (big_chungus_input) (3) (20) (20) (0) (window)
   |> (fun room -> print_endline ""; print_int seed;
        print_int (Array.length room.tiles); print_endline "";
        print_int (Array.length room.tiles.(0)); print_endline "";

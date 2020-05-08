@@ -6,6 +6,7 @@ type tile =
   | Floor of Animations.image 
   | Wall of Animations.image
   | Exit of Animations.image
+  | Boundary
 
 type collision = CItem of Item.t | CEnemy of Enemy.t 
                | CWall of tile | CExit of tile | CPlayer of Player.t

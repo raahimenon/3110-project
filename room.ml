@@ -6,6 +6,7 @@ type tile =
   | Floor of Animations.image 
   | Wall of Animations.image
   | Exit of Animations.image
+  | Boundary
 type t = 
   {
     player: Player.t;
@@ -25,6 +26,7 @@ let draw_tile (win : Window.window) (rm : t) (x : int) (y : int) =
   | Floor (im)
   | Wall (im) 
   | Exit (im) -> Window.draw_image win im x_draw y_draw
+  | Boundary -> ()
 
 let draw_room (win : Window.window) (rm : t) = 
   Array.iteri (fun y row -> Array.iteri (fun x tile -> draw_tile win rm x y) row) rm.tiles;
@@ -83,8 +85,8 @@ let check_wall_collisions (e:Entity.e) (tile,(y,x)) =
     e.bounding_box
 
 let rec generate_tile_with_cords rm lst = match lst with
-  | (y,x)::t -> let ar = try ([rm.tiles.(y).(x),(y,x)]) with e -> [] 
-    in ar @ generate_tile_with_cords rm t 
+  | (y,x)::t -> let ar = try rm.tiles.(y).(x),(y,x) with e -> Boundary, (y,x)
+    in ar :: generate_tile_with_cords rm t 
   | [] -> []
 
 let floor f = Float.floor f |> int_of_float

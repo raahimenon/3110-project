@@ -5,6 +5,7 @@ let room_from_seed (s : int) win =
   Array.fill default_tiles.(0) 0 11 (Room.Wall (Animations.load_image "./sprites/room/wall.bmp" (Window.get_renderer win)));
   Array.fill default_tiles.(10) 0 11 (Room.Wall (Animations.load_image "./sprites/room/wall.bmp" (Window.get_renderer win)));
   Room.({
+      seed = s;
       player = Player.make_player "link" 0 win; 
       enemies =[];
       items =[];

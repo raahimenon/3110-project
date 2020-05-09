@@ -51,6 +51,7 @@ let sample_space (input : Room.tile array array) (sample_dim : int)
       else (fun s -> s))
 
 let weight_ref : int array ref = ref [||]
+let noisy_target_coords : int array = [|0; 0|]
 
 (** [get_entropy elem] returns the number of possibilities for a given element 
     in the wave *)
@@ -69,7 +70,7 @@ let get_entropy (elem : bool array) : float =
                          -. (p *. (log p) /. (log 2.) /. (float_of_int weight))))
     elem !weight_ref;
 
-  if (Array.mem true elem) then !total_SE else -1.
+  if (Array.mem true elem) then !total_SE +. Random.float 1e-6 else -1.
 
 (** [get_indices condition a] returns the indices of all elements in array 
     [a] that satisfy [condition]. *)
@@ -108,35 +109,9 @@ let rec collapse_loop (samples : Room.tile array array array)
   (* Initialize RNG TODO: does this need to be done in-function? *)
   Random.init seed;
 
-  (* Randomly select a minimum entropy wave section and collapse it *)
-  (* Identify potential wave sections *)
-  let candidate_indices =
-    (* All sections with desired entropy *)
-    (get_indices2 (fun e -> Float.equal (get_entropy e) minimum_entropy) wave)
-    (* Filter out collapsed sections *)
-    |> Array.to_list
-    |> List.filter_map
-      (fun ind -> let viable = ref false in
-        for i = 0 to (Array.length samples.(0) - 1) do
-          for j = 0 to (Array.length samples.(0).(0) - 1) do
-            match output.(ind.(0) + i).(ind.(1) + j) with
-            | None -> viable := true
-            | Some t -> ()
-          done
-        done;
-        if !viable then Some ind else None)
-    |> Array.of_list
-  in
-
-  print_endline ("get random target of " ^ (string_of_int (Array.length candidate_indices)));
-  (* Randomly select a wave section *)
-  let target_coords =
-    Array.get candidate_indices (Random.int (Array.length candidate_indices))
-  in
-  (* Collapse the selected section to a randomly selected sample *)
-  (* Identify potential samples *)
+  (* Get possible samples *)
   let sample_indices =
-    wave.(target_coords.(0)).(target_coords.(1)) |> get_indices (fun s -> s)
+    wave.(noisy_target_coords.(0)).(noisy_target_coords.(1)) |> get_indices (fun s -> s)
   in
 
   print_endline ("get random sample of " ^ (string_of_int (Array.length sample_indices)));
@@ -148,26 +123,18 @@ let rec collapse_loop (samples : Room.tile array array array)
   (* Propogate the collapse to output *)
   for i = 0 to Array.length samples.(sample_index) - 1 do
     for j = 0 to Array.length samples.(sample_index).(i) - 1 do
-      (* Sanity check. Verifies that the collapse is either agreeing with 
-         existing tiles, or ovewriting [None] tiles. TODO: remove *)
-      (match output.(target_coords.(0) + i).(target_coords.(1) + j) with
-       | None -> ()
-       | Some t when t = samples.(sample_index).(i).(j) -> ()
-       | Some other ->
-         raise (Sys_error "sanity check failed at room_gen line 124"));
-
-      output.(target_coords.(0) + i).(target_coords.(1) + j)
+      output.(noisy_target_coords.(0) + i).(noisy_target_coords.(1) + j)
       <- Some samples.(sample_index).(i).(j)
     done
   done;
 
   (* Adjust wave possibilities *)
-  for i = max 0 (target_coords.(0) - (Array.length samples.(0)) + 1)
+  for i = max 0 (noisy_target_coords.(0) - (Array.length samples.(0)) + 1)
     to min (Array.length wave - 1)
-        (target_coords.(0) + (Array.length samples.(0)) - 1) do
-    for j = max 0 (target_coords.(1) - (Array.length samples.(0).(0)) + 1)
+        (noisy_target_coords.(0) + (Array.length samples.(0)) - 1) do
+    for j = max 0 (noisy_target_coords.(1) - (Array.length samples.(0).(0)) + 1)
       to min (Array.length wave.(0) - 1)
-          (target_coords.(1) + (Array.length samples.(0).(0)) - 1) do
+          (noisy_target_coords.(1) + (Array.length samples.(0).(0)) - 1) do
       (* Iterate across each sample *)
       wave.(i).(j)
       <- (samples |> Array.map
@@ -182,7 +149,8 @@ let rec collapse_loop (samples : Room.tile array array array)
                    | other -> ()
                  done;
                done;
-               !viable);); if (Array.mem true wave.(i).(j)) then () else (
+               !viable););
+      if (Array.mem true wave.(i).(j)) then () else (
         print_endline ""; 
         for n = 0 to Array.length samples.(0) - 1 do
           for m = 0 to Array.length samples.(0).(0) - 1 do
@@ -211,15 +179,13 @@ let rec collapse_loop (samples : Room.tile array array array)
         done
       done;
 
-      (* If uncollapsed, calculate entropy and compare to minimum *)
+      (* If uncollapsed and non-contradictory, calculate entropy and 
+         compare to minimum *)
       if (!fully_collapsed || ((get_entropy wave.(i).(j)) < 0.))
       then ()
-      else (new_min_ent := min !new_min_ent (get_entropy wave.(i).(j)));
-(*
-      (* Check for contradictions *)
-      if (not (!fully_collapsed) && not (Array.mem true wave.(i).(j)))
-      then (failwith "contradiction")
-      else ();*)
+      else (noisy_target_coords.(0) <- i;
+            noisy_target_coords.(1) <- j;
+            new_min_ent := min !new_min_ent (get_entropy wave.(i).(j)));
     done
   done;
 
@@ -234,9 +200,9 @@ let rec collapse_loop (samples : Room.tile array array array)
   done;
   iters := !iters + 1;
   print_string ("[" ^ (string_of_float (Sys.time ()) ^ "]"));
-  print_string ("\t Prog: " ^ (string_of_int !iters));
-  print_string ("\t CTiles: " ^ (string_of_int !ctiles) ^ " / " ^ (string_of_int ((Array.length output) * (Array.length output.(0)))));
-  print_string ("\t MinEnt: " ^ (string_of_float !new_min_ent));
+  print_string ("\t Steps: " ^ (string_of_int !iters));
+  print_string ("\t Collapsed Tiles: " ^ (string_of_int !ctiles) ^ " / " ^ (string_of_int ((Array.length output) * (Array.length output.(0)))));
+  (* print_string ("\t MinEnt: " ^ (string_of_float !new_min_ent)); *)
   print_endline "";
 
   (* Check if any uncollapsed tiles remain *)
@@ -276,7 +242,6 @@ let generate_room (seed : int) (input : Room.tile array array)
 
   (* Generate sample space list *)
   let samples = sample_space input sample_dim rotations_on reflections_on in
-  print_endline ("\nsample count: "^(string_of_int (Array.length samples)));
 
   (* Weights *)
   weight_ref := samples |> Array.map (count_instances samples);
@@ -335,12 +300,14 @@ let generate_room (seed : int) (input : Room.tile array array)
 
 
   (* TODO: Place entrance and exit *)
-  let entry_coords = ref (0, 0) in
+  let entry_coords = ref (0., 0.) in
   for i = 0 to Array.length !tiles - 1 do
     for j = 0 to Array.length !tiles.(0) - 1 do
-      match !tiles.(i).(j) with
-      | Floor f -> entry_coords := (i, j)
-      | other -> ()
+      if (!entry_coords = (0., 0.))
+      then (match !tiles.(i).(j) with
+          | Floor f -> entry_coords := (float_of_int i, float_of_int j)
+          | other -> ())
+      else ()
     done
   done;
 
@@ -349,6 +316,7 @@ let generate_room (seed : int) (input : Room.tile array array)
 
   (* TODO: Place items *)
   (* TODO: respond to enemy density and/or entrance/exit distance *)
+
   let items = 
     Random.init seed;
     let counts_as_wall tiles x y = 
@@ -378,9 +346,11 @@ let generate_room (seed : int) (input : Room.tile array array)
       else place_items tiles accu next_x next_y in
     place_items !tiles (0, []) 0 0 |> snd in
 
+  let basic_player = (Player.make_player "link" 0 window) in
+
   {
     seed = !attempt_seed;
-    player = {(Player.make_player "link" 0 window) with tile_destination = !entry_coords};
+    player = {basic_player with e = {basic_player.e with pos = !entry_coords}};
     enemies = enemies;
     items = items;
     tiles = !tiles;

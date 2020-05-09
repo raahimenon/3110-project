@@ -23,6 +23,9 @@ val hud_bezel_px : int
 val combat_objects : string array
 val buff_objects : string array
 
+val item_spawn_threshold : int
+val item_spawn_probability : float
+
 val bounding_boxes : Yojson.Basic.t
 
 val boundbox_width : string -> int

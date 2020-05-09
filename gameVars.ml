@@ -24,6 +24,10 @@ let inventory_size = vrad |> int_of_float
 let combat_objects = [|"sword"|]
 let buff_objects = [|"blue-rupee"|]
 
+let item_spawn_threshold = 4
+let item_spawn_probability = 0.5
+
+
 let bounding_boxes = Yojson.Basic.from_file "boundbox.json"
 
 let boundbox_helper o value = 

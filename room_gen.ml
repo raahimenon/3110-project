@@ -367,9 +367,9 @@ let generate_room (seed : int) (input : Room.tile array array)
       let next_x = if x + 1 = Array.length tiles.(0) then 0 else x + 1 in
       let next_y = if next_x = 0 then y+1 else y in
       if y > Array.length tiles then accu
-      else if Random.float 1. > 0.5 && 
+      else if Random.float 1. > GameVars.item_spawn_probability && 
               counts_as_wall tiles x y = 0 &&
-              count_walls_around tiles x y > 4 then 
+              count_walls_around tiles x y > GameVars.item_spawn_threshold then 
         let id, lst = accu in 
         place_items tiles 
           ((id + 1),

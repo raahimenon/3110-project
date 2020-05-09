@@ -87,19 +87,23 @@ let change_state (player:Player.t) pst st =
         end
       | None -> player end
   |Attack (dir, time, anim) ->
-    let player = 
-      {player with 
-       e ={player.e with curr_anim = (get_anim player.e player.e.direction "attack"); 
-                         curr_frame_num = 0; pos = player.e.pos;
-                         curr_tile = player.e.pos |> to_int;}; 
-       state = Attack (dir,time, anim); 
-       paused = true;} in
-    begin match get_item_slot st.current_room player.inventory_slot with
-      | Some i -> begin match i.unique_stats with
-          |Buff b -> apply_buffs player b.effect
-          | _ -> player
-        end
-      | None -> player end
+    {player with 
+     e =
+       {player.e with 
+        curr_anim = (get_anim player.e player.e.direction "attack"); 
+        curr_frame_num = 0; pos = player.e.pos;
+        curr_tile = player.e.pos |> to_int;}; 
+     state = Attack (dir,time, anim); 
+     paused = true;}
+  |Drop (dir, time) -> 
+    {player with
+     e = 
+       {player.e with 
+        curr_anim = (get_anim player.e player.e.direction "item");
+        curr_frame_num = 0; pos = player.e.pos;
+        curr_tile = player.e.pos |> to_int;};
+     state = Drop (dir, time);
+     paused = true;}
 
 
 let entity_move e rm velocity = 
@@ -130,7 +134,8 @@ let change_state_input player input st =
             Window.s; 
             Window.d; 
             Window.rclick; 
-            Window.lclick]) with
+            Window.lclick;
+            Window.e]) with
   | Some r when r = Window.rclick -> 
     begin match player.state with 
       | Interact _ -> player 
@@ -151,6 +156,8 @@ let change_state_input player input st =
                  Some (get_anim i.e player.e.direction "attack"))) st
     | _ -> change_state player
              (Use_Item (player.e.direction,Window.get_time ())) st end
+  | Some e when e = Window.e -> 
+    change_state player (Drop (player.e.direction, Window.get_time ())) st
   | Some k -> let dir = dir_from_keys k in begin match player.state with
       | Move d when d = dir -> player
       | _ -> change_state player (Move dir) st end
@@ -205,7 +212,8 @@ let player_updater (st:state) (player:Player.t) =
     let player = {player with enemy_buffer = player.enemy_buffer @ enemies_hit} in
     (if anim_over player.e.curr_anim time
      then {player with paused = false; enemy_buffer = [] } else player), enemies_hit
-  | Use_Item (dir, time) -> 
+  | Use_Item (dir, time)
+  | Drop (dir, time) ->
     (if anim_over player.e.curr_anim time
      then {player with paused = false } else player), []
 
@@ -298,7 +306,18 @@ let item_updater (st:state) (item:Item.t) : Item.t option =
                 Some {item with unique_stats = Buff{max_durability; durability = durability - 1; effect}; in_use = true}
               else (print_endline "BROKEN"; None) 
             | _ -> Some item end
-        else Some item 
+        else Some item
+      | Drop (dir, _) ->
+        if p.inventory_slot = index then 
+          let new_e =  
+            entity_move 
+              {item.e with direction = p.e.direction; pos = p.e.pos} 
+              st.current_room 1. in 
+          let collisions = 
+            Room.collisions_with_entity st.current_room new_e item.e in 
+          if List.length collisions > 0 then Some item else
+            Some {item with e = new_e; pos = Position new_e.pos}
+        else Some item
       | other -> Some {item with in_use = false} end
   | Position (x,y) -> let item = {item with in_use = false} in
     (* Check if the player is trying to interact *)

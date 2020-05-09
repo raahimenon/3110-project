@@ -5,6 +5,7 @@ type player_state = Idle
                   | Move of direction 
                   | Attack of direction*int*(Animations.animation option)
                   | Interact of direction*int
+                  | Drop of direction*int
 type entity_id = int
 
 type player_type =  {

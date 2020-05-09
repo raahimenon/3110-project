@@ -8,6 +8,7 @@ type player_state = Idle
                   | Move of Entity.direction 
                   | Attack of Entity.direction*int*(Animations.animation option)
                   | Interact of Entity.direction*int
+                  | Drop of Entity.direction*int
 
 type player_type =  {
   e: Entity.e;

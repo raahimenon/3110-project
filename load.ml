@@ -13,7 +13,7 @@ let room_from_seed (s : int) win =
     })
 
 let entity_from_seed_id (s : int) (id : int) (win : Window.window) = 
-  Item.make_item "item" id win
+  Item.make_item s id win 0 0
 
 let rec room_from_entities (rm : Room.t) (entities : (int * int * int * int) list) : Room.t =
   match entities with

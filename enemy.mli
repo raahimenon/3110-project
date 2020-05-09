@@ -9,7 +9,7 @@ type enemy_type =  {
   max_health : int;
   health : int;
   state : enemy_state;
-  unique_stats : stat_type;
+  unique_stats : Combat.t;
   logic : string;
 }
 module Enemy : Entity with type t = enemy_type

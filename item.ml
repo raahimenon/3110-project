@@ -33,7 +33,15 @@ module Item : (Entity with type t = item_type)  = struct
       Window.draw_image win (snd t.e.curr_anim).(t.e.curr_frame_num) x_draw y_draw
 end
 
-let make_item name id (win: Window.window) x y = 
+let make_item seed id (win: Window.window) x y = 
+  Random.init (seed + id);
+  let combat = Random.int 2 in 
+  let name = 
+    if combat = 0 then 
+      GameVars.buff_objects.(Random.int (Array.length GameVars.buff_objects))
+    else
+      GameVars.combat_objects.(Random.int (Array.length GameVars.combat_objects))
+  in
   let animations = Animations.load_directions name (Window.get_renderer win) in
   let curr_anim = Animations.anim_from_dir_name animations "down" "idle" in
   {
@@ -41,8 +49,8 @@ let make_item name id (win: Window.window) x y =
         curr_anim = curr_anim;
         curr_frame_num = 0;
         size = animations |> List.hd |> Animations.size ;
-        bounding_box = (6,15);
-        bounding_box_pos  = (4,1);
+        bounding_box = GameVars.boundbox_wh name;
+        bounding_box_pos = GameVars.boundbox_xy name;
         direction = Down;
         name = name;
         frame = Animations.frame curr_anim 0; 
@@ -50,11 +58,32 @@ let make_item name id (win: Window.window) x y =
         curr_tile = x, y;};
     pos = Position (float_of_int x, float_of_int y);
     id = id;
-    unique_stats = Buff {
-        max_durability = 2;
-        durability = 2;
-        effect = [Health 30];
-      };
+    unique_stats = if combat = 0 then
+        let mhealth = if Random.int 2 = 1 then Random.int 10 + 1 else 0 in
+        let atk = if Random.int 2 = 1 then Random.int 5 + 1 else 0 in
+        let spd = if Random.int 2 = 1 then Random.int 2 + 1 else 0 in
+        let health = if Random.int 2 = 1 || (mhealth = 0 && atk = 0 && spd = 0) 
+          then Random.int 50 + 1 else 0 in
+        let durability = 
+          if atk > 0 || spd > 0 then 1 else 
+            (Random.float 5. +. 2.) *. 
+            begin if health > 0 then Random.float 1. else 1. end *. 
+            begin if mhealth > 0 then Random.float 1. else 1. end 
+            |> Float.round |> int_of_float 
+            |> (+) 1 in
+        Buff {
+          max_durability = durability;
+          durability = durability;
+          effect = 
+            [Health health; Max_health mhealth; Attack atk; Movement_speed spd];
+        } else begin
+        let atk = Random.float 1. +. 0.7 in
+        let spd = Random.int 5 + 1 - int_of_float (10. *. (atk-.0.7)/.1.) in
+        Combat {
+          attack =  atk;
+          movement_speed = spd;
+        } end
+    ;
     in_use = false
   }
 

@@ -8,6 +8,7 @@ type player_state = Idle
                   | Move of Entity.direction 
                   | Attack of Entity.direction*int*(Animations.animation option)
                   | Interact of Entity.direction*int
+                  | Drop of Entity.direction*int
 
 type player_type =  {
   e: Entity.e;
@@ -17,10 +18,8 @@ type player_type =  {
   max_health : int;
   health : int;
   state : player_state;
-  unique_stats : stat_type;
+  unique_stats : Combat.t;
   inventory_slot : int;
-  attack: int;
-  defence: int;
   paused: bool;
   enemy_buffer: entity_id list;
 }
@@ -60,8 +59,8 @@ let make_player name id (win : Window.window)=
        curr_frame_num = 0;
        direction = Down;
        size = animations |> List.hd |> Animations.size;
-       bounding_box = (14,13);
-       bounding_box_pos = (1,2);
+       bounding_box = GameVars.boundbox_wh name;
+       bounding_box_pos = GameVars.boundbox_xy name;
        name = name;
        frame = Animations.frame curr_anim 0; 
        pos = 1.,2.;
@@ -72,10 +71,8 @@ let make_player name id (win : Window.window)=
     max_health = 100;
     health = 100;
     state = Idle;
-    unique_stats = Combat {attack = 10; defense = 10; movement_speed = 5};
+    unique_stats = {attack = 10.; movement_speed = 10};
     inventory_slot = 0;
-    attack = 10;
-    defence = 10;
     paused = false;
     enemy_buffer = [];
   }

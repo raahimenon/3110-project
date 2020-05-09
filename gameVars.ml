@@ -21,8 +21,8 @@ let hud_bezel_px = tile_size *. hud_bezel_tile |> int_of_float
 
 let inventory_size = vrad |> int_of_float
 
-let combat_objects = ["sword"]
-let buff_objects = ["blue-rupee"]
+let combat_objects = [|"sword"|]
+let buff_objects = [|"blue-rupee"|]
 
 let bounding_boxes = Yojson.Basic.from_file "boundbox.json"
 

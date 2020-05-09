@@ -14,8 +14,8 @@ let main () =
 
   let window = Window.create_window "3110 Project" (GameVars.width * (int_of_float GameVars.tile_size)) (GameVars.height * (int_of_float GameVars.tile_size)) in
 
-  let default_item = make_item "blue-rupee" 1 window 2 3 in
-  let default_item2 = make_item "sword" 2 window 5 8 in
+  let default_item = make_item 1 1 window 2 3 in
+  let default_item2 = make_item 1 2 window 5 8 in
 
   let default_enemy = make_enemy "link" 3 window in 
 

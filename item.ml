@@ -33,7 +33,15 @@ module Item : (Entity with type t = item_type)  = struct
       Window.draw_image win (snd t.e.curr_anim).(t.e.curr_frame_num) x_draw y_draw
 end
 
-let make_item name id (win: Window.window) x y = 
+let make_item seed id (win: Window.window) x y = 
+  Random.init (seed + id);
+  let combat = Random.int 2 in 
+  let name = 
+    if combat = 0 then 
+      GameVars.buff_objects.(Random.int (Array.length GameVars.buff_objects))
+    else
+      GameVars.combat_objects.(Random.int (Array.length GameVars.combat_objects))
+  in
   let animations = Animations.load_directions name (Window.get_renderer win) in
   let curr_anim = Animations.anim_from_dir_name animations "down" "idle" in
   {
@@ -50,11 +58,18 @@ let make_item name id (win: Window.window) x y =
         curr_tile = x, y;};
     pos = Position (float_of_int x, float_of_int y);
     id = id;
-    unique_stats = Buff {
-        max_durability = 2;
-        durability = 2;
-        effect = [Health 30];
-      };
+    unique_stats = if combat = 0 then 
+        Buff {
+          max_durability = 2;
+          durability = 2;
+          effect = [Health 30];
+        } else
+        Combat {
+          attack =  30;
+          defense = 20;
+          movement_speed = 5;
+        }
+    ;
     in_use = false
   }
 

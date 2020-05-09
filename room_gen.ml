@@ -349,7 +349,34 @@ let generate_room (seed : int) (input : Room.tile array array)
 
   (* TODO: Place items *)
   (* TODO: respond to enemy density and/or entrance/exit distance *)
-  let items = [] in
+  let items = 
+    Random.init seed;
+    let counts_as_wall tiles x y = 
+      try match tiles.(y).(x) with |Room.Wall _ -> 1 |_ -> 0 
+      with e -> 1 in
+    let count_walls_around tiles x y = 
+      counts_as_wall tiles (x-1) (y-1) +
+      counts_as_wall tiles (x) (y-1) +
+      counts_as_wall tiles (x+1) (y-1) +
+      counts_as_wall tiles (x+1) (y) +
+      counts_as_wall tiles (x+1) (y+1) +
+      counts_as_wall tiles (x) (y+1) +
+      counts_as_wall tiles (x-1) (y+1) +
+      counts_as_wall tiles (x-1) (y) in
+    let rec place_items tiles accu x y =
+      let next_x = if x + 1 = Array.length tiles.(0) then 0 else x + 1 in
+      let next_y = if next_x = 0 then y+1 else y in
+      if y > Array.length tiles then accu
+      else if Random.float 1. > 0.5 && 
+              counts_as_wall tiles x y = 0 &&
+              count_walls_around tiles x y > 4 then 
+        let id, lst = accu in 
+        place_items tiles 
+          ((id + 1),
+           ((Item.make_item !attempt_seed (fst accu) window x y) :: lst))
+          next_x next_y
+      else place_items tiles accu next_x next_y in
+    place_items !tiles (0, []) 0 0 |> snd in
 
   {
     seed = !attempt_seed;

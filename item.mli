@@ -13,6 +13,6 @@ type item_type = {
 
 module Item : Entity with type t = item_type
 
-val make_item : name_t -> entity_id -> Window.window -> int -> int -> item_type
+val make_item : int -> entity_id -> Window.window -> int -> int -> item_type
 
 val is_combat_item : item_type -> bool

@@ -20,8 +20,8 @@ val inventory_size : int
 val hud_bezel_tile : float
 val hud_bezel_px : int
 
-val combat_objects : string list
-val buff_objects : string list
+val combat_objects : string array
+val buff_objects : string array
 
 val bounding_boxes : Yojson.Basic.t
 

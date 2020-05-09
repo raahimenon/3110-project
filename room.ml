@@ -45,10 +45,9 @@ let get_unused_inventory (rm : t) : int option =
     | t -> t in
   let idxs = create_list GameVars.inventory_size [] in
   let inventory = List.map (fun i -> match i.pos with | Inventory {index = idx} -> idx | _ -> (-1)) rm.items 
-                  |> List.filter ((>=) 0) in
+                  |> List.filter ((<=) 0) in
   let unused = List.filter (fun i -> List.mem i inventory |> not) idxs in
   let lowest_unused = List.fold_left (fun acc idx -> min acc idx) (GameVars.inventory_size) unused in
-  print_endline (string_of_int lowest_unused);
   if lowest_unused < GameVars.inventory_size && lowest_unused >= 0 then Some lowest_unused
   else None
 

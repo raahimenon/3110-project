@@ -1,5 +1,4 @@
 type t = {
-  attack : int;
-  defense : int;
+  attack : float;
   movement_speed : int
 }

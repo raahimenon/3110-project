@@ -8,7 +8,7 @@ let anim_spf = 1. /. anim_fps
 let anim_spf_in_milli = int_of_float (anim_spf *. 1000.)
 
 let scale = 3.
-let speed =  tile_size*.spf/.4.
+let speed =  tile_size*.spf/.40.
 
 let hrad = 10.
 let vrad = 9.

@@ -58,17 +58,31 @@ let make_item seed id (win: Window.window) x y =
         curr_tile = x, y;};
     pos = Position (float_of_int x, float_of_int y);
     id = id;
-    unique_stats = if combat = 0 then 
+    unique_stats = if combat = 0 then
+        let mhealth = if Random.int 2 = 1 then Random.int 10 + 1 else 0 in
+        let atk = if Random.int 2 = 1 then Random.int 10 + 1 else 0 in
+        let spd = if Random.int 2 = 1 then Random.int 2 + 1 else 0 in
+        let health = if Random.int 2 = 1 || (mhealth = 0 && atk = 0 && spd = 0) 
+          then Random.int 50 + 1 else 0 in
+        let durability = (Random.float 5. +. 2.) *. 
+                         begin if health > 0 then Random.float 1. else 1. end *. 
+                         begin if mhealth > 0 then Random.float 1. else 1. end *. 
+                         begin if atk > 0 then Random.float 1. else 1. end *. 
+                         begin if spd > 0 then Random.float 1. else 1. end 
+                         |> Float.round |> int_of_float 
+                         |> (+) 1 in
         Buff {
-          max_durability = 2;
-          durability = 2;
-          effect = [Health 30];
-        } else
+          max_durability = durability;
+          durability = durability;
+          effect = 
+            [Health health; Max_health mhealth; Attack atk; Movement_speed spd];
+        } else begin
+        let atk = Random.float 1. +. 0.7 in
+        let spd = Random.int 5 + 1 - int_of_float (5. *. atk/.1.7) in
         Combat {
-          attack =  30;
-          defense = 20;
-          movement_speed = 5;
-        }
+          attack =  atk;
+          movement_speed = spd;
+        } end
     ;
     in_use = false
   }

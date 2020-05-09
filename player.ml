@@ -18,10 +18,8 @@ type player_type =  {
   max_health : int;
   health : int;
   state : player_state;
-  unique_stats : stat_type;
+  unique_stats : Combat.t;
   inventory_slot : int;
-  attack: int;
-  defence: int;
   paused: bool;
   enemy_buffer: entity_id list;
 }
@@ -73,10 +71,8 @@ let make_player name id (win : Window.window)=
     max_health = 100;
     health = 100;
     state = Idle;
-    unique_stats = Combat {attack = 10; defense = 10; movement_speed = 5};
+    unique_stats = {attack = 10.; movement_speed = 10};
     inventory_slot = 0;
-    attack = 10;
-    defence = 10;
     paused = false;
     enemy_buffer = [];
   }

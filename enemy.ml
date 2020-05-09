@@ -11,7 +11,7 @@ type enemy_type =  {
   max_health : int;
   health : int;
   state : enemy_state;
-  unique_stats : stat_type;
+  unique_stats : Combat.t;
   logic : string;
 }
 
@@ -46,6 +46,6 @@ let make_enemy name id (win : Window.window) =
     max_health = 100;
     health = 100;
     state = EIdle;
-    unique_stats = Combat {attack = 10; defense = 10; movement_speed = 5};
+    unique_stats = {attack = 10.; movement_speed = 5};
     logic = "";
   }

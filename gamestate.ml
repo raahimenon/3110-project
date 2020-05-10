@@ -596,11 +596,11 @@ let rec game_loop st time =
                        not (List.mem Window.q input);
              current_room = 
                st.current_room |> room_updater st;
+             window = st.window;
              input = input;
              last_anim_frame = begin let time = Window.get_time () in  
                if time - st.last_anim_frame > GameVars.anim_spf_in_milli 
                then time else st.last_anim_frame end;
-             window = st.window;
              icons = st.icons;
            } in
   game_loop st curr_time

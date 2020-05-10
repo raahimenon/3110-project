@@ -579,7 +579,8 @@ let rec game_loop st time =
   let curr_time = Window.get_time () in
   let delta = curr_time - time in 
   let delay = spf_in_milli - delta in
-  begin if (delay) > 0 then Window.wait (delay) 
+
+begin if (delay) > 0 then Window.wait (delay) 
     else print_endline ("lag" ^ string_of_int delay)
   end;
 
@@ -591,8 +592,7 @@ let rec game_loop st time =
   Window.render st.window;
 
   let input = Window.input_query st.input in
-  let st = { st with 
-             running = not (List.mem Window.esc input) || 
+  let st = { running = not (List.mem Window.esc input) || 
                        not (List.mem Window.q input);
              current_room = 
                st.current_room |> room_updater st;

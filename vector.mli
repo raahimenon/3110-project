@@ -45,6 +45,9 @@ val vec_of_dir : Entity.direction -> t
 (** [dir_of_vec vec] is direction most closely aligned with vector [vec]. *)
 val dir_of_vec : t -> Entity.direction
 
+(** [magnitude vec] is magnitude of vector [vec]. *)
+val magnitude : t -> float
+
 (** [add sc x] is the float vector that is formed when each entry of [x] is
     multiplied with [sc].*)
 val scale_vec : float -> t -> t

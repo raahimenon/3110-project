@@ -34,9 +34,8 @@ let item_from_json win json =
 
 let load s win =
   let json = try Yojson.Basic.from_file ("./saves/"^s) with e -> 
-    print_string "File DNE - Are you sure this file exists in the saves folder?\n";
-    Window.exit_window win;
-    exit 0 in
+    print_string "Generating New Room\n";
+    failwith "Bad Filename" in
   let seed = member "seed" json |> to_int in
   let room = room_from_seed seed win in
   let player_json = member "player" json in

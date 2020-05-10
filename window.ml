@@ -63,8 +63,7 @@ let render (win : window) : unit =
 
 let exit_window (win : window) : unit =
   Sdlwindow.destroy (fst win);
-  Sdl.quit ();
-  exit 0
+  Sdl.quit ()
 
 let rec print_list lst = match lst with
   | [] -> print_endline ""

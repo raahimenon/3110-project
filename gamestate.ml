@@ -264,7 +264,8 @@ let player_updater (st:state) (player:Player.t) =
                  attacking_enemies =  enemies_hit @ player.attacking_enemies;},[]
   | Idle -> {player with 
              inventory_slot = update_inventory player.inventory_slot st;}, []
-  | Interact (dir, time) -> if anim_over player.e.curr_anim time (player_speed st) then 
+  | Interact (dir, time) -> 
+    if anim_over player.e.curr_anim time (player_speed st) then 
       {player with paused = false;
                    inventory_slot = 
                      update_inventory player.inventory_slot st}, []
@@ -575,6 +576,16 @@ let draw_hud (st : state) =
           st.current_room.player.e.pos i 
       |_ -> ()) st.current_room.items
 
+let gen_room_check st =
+  let player = st.current_room.player in
+  match player.state with
+  |Interact _ ->
+    let new_e,collisions =  try_movement player.e st.current_room 
+        (float_of_int (player_speed st)*.GameVars.speed) in 
+    let exit = List.filter (fun x -> match x with CExit _ -> true |_ -> false) collisions in
+    List.length exit > 0
+  | _ -> false
+
 let rec game_loop st time = 
   let curr_time = Window.get_time () in
   let delta = curr_time - time in 
@@ -591,14 +602,43 @@ let rec game_loop st time =
   ignore (draw_hud st);
   Window.render st.window;
 
+  let next_room = 
+    if gen_room_check st 
+    then 
+      let () = Random.init (st.current_room.seed) in
+      let rm_ref : Room.t option ref = ref None in
+      Thread.create (fun seed -> rm_ref := Some (Room_gen.simple_gen (Random.int 1073741823) st.window)) () |> ignore;
+      let frame = ref 0 in
+      let loading = Animations.load_animation "./sprites/loading/" "loading" (Window.get_renderer st.window) in
+      let time = Window.get_time () |> ref in
+      while (!rm_ref = None) do 
+        Window.clear st.window;
+        Window.draw_image st.window (Animations.frame loading !frame) (hrad -. 2.) (vrad -. 2.);
+        Window.render st.window;
+        if Window.get_time () - !time > GameVars.anim_spf_in_milli then begin
+          time := Window.get_time ();
+          frame := (!frame + 1) mod (snd loading |> Array.length) end;
+      done;
+      let rm = !rm_ref |> Option.get in
+      let pos = rm.player.e.pos in
+      {rm with player = 
+                 {st.current_room.player with 
+                  paused = false; 
+                  e = {st.current_room.player.e with 
+                       pos = pos; 
+                       curr_tile = to_int pos};};
+               items = Room.get_inventory st.current_room @ rm.items}
+    else room_updater st st.current_room in
+
   let input = Window.input_query st.input in
   let st = { running = not (List.mem Window.esc input) || 
                        not (List.mem Window.q input);
-             current_room = 
-               st.current_room |> room_updater st;
+             current_room = next_room;
              window = st.window;
              input = input;
+             last_anim_frame = begin let time = Window.get_time () in  
+               if time - st.last_anim_frame > GameVars.anim_spf_in_milli 
+               then time else st.last_anim_frame end;
              icons = st.icons;
-             last_anim_frame = let time = Window.get_time () in if time - st.last_anim_frame > GameVars.anim_spf_in_milli then time else st.last_anim_frame
            } in
   game_loop st curr_time

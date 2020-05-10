@@ -312,14 +312,17 @@ let enemy_updater (st:state) (cols: entity_id list) (enemy:Enemy.t)  =
               curr_frame_num = 0;}; 
         } 
       else 
-        {enemy with 
-         state = EMove dir; 
-         e = {enemy.e with 
-              direction = dir; 
-              curr_anim = (Entity.get_anim enemy.e dir "walk");
-              curr_frame_num = 0;}; 
+        match enemy.state with 
+        | EMove d when d = dir -> enemy
+        |_ ->
+          {enemy with 
+           state = EMove dir; 
+           e = {enemy.e with 
+                direction = dir; 
+                curr_anim = (Entity.get_anim enemy.e dir "walk");
+                curr_frame_num = 0;}; 
 
-        } 
+          } 
     end 
   in 
   match enemy.state with

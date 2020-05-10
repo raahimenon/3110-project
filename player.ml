@@ -1,19 +1,22 @@
 open Entity
 open Vector
+open Enemy
 type stat_type = Combat of Combat.t | Buff of Buff.t
 type entity_id = int
-type direction = |Up |Down |Left |Right
-type player_state = Idle 
-                  | Use_Item of Entity.direction*int 
-                  | Move of Entity.direction 
-                  | Attack of Entity.direction*int*(Animations.animation option)
-                  | Interact of Entity.direction*int
-                  | Drop of Entity.direction*int
+type player_state = 
+  | Idle 
+  | Use_Item of Entity.direction * int 
+  | Move of Entity.direction 
+  | Attack of Entity.direction * int * (Animations.animation option)
+  | Interact of Entity.direction * int
+  | Drop of Entity.direction * int
+  | Knock of Entity.direction * int
 
 type player_type =  {
   e: Entity.e;
   tile_destination:int*int;
-  being_attacked : bool;
+  attacking_enemies : Enemy.t list;
+  last_damage : int;
   id : entity_id;
   max_health : int;
   health : int;
@@ -67,7 +70,8 @@ let make_player name id (win : Window.window)=
        curr_tile = 1,2;};
     id = id;
     tile_destination = 0,0;
-    being_attacked = false;
+    attacking_enemies = [];
+    last_damage = -500;
     max_health = 100;
     health = 100;
     state = Idle;

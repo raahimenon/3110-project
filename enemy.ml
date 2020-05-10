@@ -1,18 +1,18 @@
 open Entity
-
-type stat_type = Combat of Combat.t | Buff of Buff.t
 type entity_id = int
-type direction = |Up |Down |Left |Right
-type enemy_state = EIdle | EHeal | EMove of Entity.direction | EAttack of Entity.direction
-                 |EDead
+
+type enemy_state = 
+  | EIdle | EHeal | EMove of direction | EAttack of direction
+  | EDead | EKnock of direction * int
+
 type enemy_type =  {
   e: Entity.e;
   id : entity_id;
   max_health : int;
   health : int;
+  aggro_on : bool;
   state : enemy_state;
   unique_stats : Combat.t;
-  logic : string;
 }
 
 module  Enemy : (Entity with type t = enemy_type)  = struct
@@ -44,8 +44,8 @@ let make_enemy name id (win : Window.window) =
     };
     id = id;
     max_health = 100;
+    aggro_on = true;
     health = 100;
     state = EIdle;
     unique_stats = {attack = 10.; movement_speed = 5};
-    logic = "";
   }

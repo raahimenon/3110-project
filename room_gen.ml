@@ -349,7 +349,7 @@ let generate_room (seed : int) (input : Room.tile array array)
   done;
 
   let counts_as_wall tiles x y = 
-    try match tiles.(y).(x) with |Room.Wall _ -> 1 |_ -> 0 
+    try match tiles.(y).(x) with |Room.Floor _ -> 0 |_ -> 1 
     with e -> 1 in
   let count_walls_around tiles x y = 
     counts_as_wall tiles (x-1) (y-1) +
@@ -361,19 +361,67 @@ let generate_room (seed : int) (input : Room.tile array array)
     counts_as_wall tiles (x-1) (y+1) +
     counts_as_wall tiles (x-1) (y) in
 
-  let exit_coords = entry_coords in
-  let rec get_exit seen_tiles visited_tiles curr_tile = 
-    let ctile_x, ctile_y, cdist = curr_tile in
-    let utile = match Hashtbl.find_opt seen_tiles (ctile_x, ctile_y - 1) with 
-      |Some d -> d |None -> Int.max_int in
-    let dtile = match Hashtbl.find_opt seen_tiles (ctile_x, ctile_y + 1) with 
-      |Some d -> d |None -> Int.max_int in
-    let ltile = match Hashtbl.find_opt seen_tiles (ctile_x - 1, ctile_y) with
-      |Some d -> d |None -> Int.max_int in
-    let rtile = match Hashtbl.find_opt seen_tiles (ctile_x + 1, ctile_y) with
-      |Some d -> d |None -> Int.max_int in ()
-  in
+  let exit_coords =
+    (* Implementation of Prim's MST algorithm *)
+    let rec get_mst seen_tiles visited_tiles curr_tile = 
+      let ctile_x, ctile_y, cdist = curr_tile in
+      let udir = ctile_y - 1 in
+      let ddir = ctile_y + 1 in
+      let ldir = ctile_x - 1 in
+      let rdir = ctile_x + 1 in
+      let udist_rec = match Hashtbl.find_opt seen_tiles (ctile_x, udir) with 
+        |Some d -> d |None -> Int.max_int in
+      let ddist_rec = match Hashtbl.find_opt seen_tiles (ctile_x, ddir) with 
+        |Some d -> d |None -> Int.max_int in
+      let ldist_rec = match Hashtbl.find_opt seen_tiles (ldir, ctile_y) with
+        |Some d -> d |None -> Int.max_int in
+      let rdist_rec = match Hashtbl.find_opt seen_tiles (rdir, ctile_y) with
+        |Some d -> d |None -> Int.max_int in 
+      let ndist = cdist + 1 in
+      Hashtbl.add visited_tiles (ctile_x, ctile_y) cdist;
+      if ndist < udist_rec && 
+         not (Hashtbl.mem visited_tiles (ctile_x, udir)) &&
+         counts_as_wall !tiles ctile_x udir = 0 then
+        Hashtbl.replace seen_tiles (ctile_x, udir) ndist;
+      if ndist < ddist_rec && 
+         not (Hashtbl.mem visited_tiles (ctile_x, ddir)) &&
+         counts_as_wall !tiles ctile_x ddir = 0 then
+        Hashtbl.replace seen_tiles (ctile_x, ddir) ndist;
+      if ndist < ldist_rec && 
+         not (Hashtbl.mem visited_tiles (ldir, ctile_y)) && 
+         counts_as_wall !tiles ldir ctile_y = 0 then
+        Hashtbl.replace seen_tiles (ldir, ctile_y) ndist;
+      if ndist < rdist_rec && 
+         not (Hashtbl.mem visited_tiles (rdir, ctile_y)) && 
+         counts_as_wall !tiles rdir ctile_y = 0 then
+        Hashtbl.replace seen_tiles (rdir, ctile_y) ndist;
+      if Hashtbl.length seen_tiles <= 0 then visited_tiles
+      else 
+        let get_min mst = 
+          Hashtbl.fold 
+            (fun (x,y) d (x_min,y_min,min) -> 
+               if d < min then (x, y, d) else (x_min, y_min, min)) 
+            mst (0, 0, Int.max_int) in
+        let x_min, y_min, min = get_min seen_tiles in
+        Hashtbl.remove seen_tiles (x_min, y_min);
+        get_mst seen_tiles visited_tiles (x_min, y_min, min) in
+    let mst = 
+      get_mst 
+        (Hashtbl.create 30)
+        (Hashtbl.create 30) 
+        (fst !entry_coords |> int_of_float, 
+         snd !entry_coords |> int_of_float, 0) in 
 
+    (* Set the exit nodes to be the furthest reachable node from the player *)
+    let x_exit, y_exit, _ = Hashtbl.fold 
+        (fun (x,y) d (x_max,y_max,max) -> 
+           if d > max then (x, y, d) else (x_max, y_max, max)) 
+        mst (0, 0, Int.min_int) in
+    (x_exit, y_exit) in
+
+  !tiles.(snd exit_coords).(fst exit_coords) <- 
+    Room.Exit (Animations.load_image "./sprites/room/exit.bmp" 
+                 (Window.get_renderer window));
 
   (* TODO: Place enemies *)
   let enemies = [] in
@@ -440,6 +488,7 @@ let simple_gen (seed : int) (window : Window.window): Room.t =
       [| w ; w ; w ; f ; w ; w ; w ; w ; w ; w ; w ; w ; f ; w ; w ; w |];
     |]
   in
+  Random.init seed;
   generate_room seed (big_chungus_input) (3) (20) (20) (0) (window)
   |> (fun room -> print_endline ""; print_int seed; print_endline "";
 

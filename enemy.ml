@@ -25,9 +25,15 @@ module  Enemy : (Entity with type t = enemy_type)  = struct
     Window.draw_rect_col win (Window.health_col_ratio ratio) (x_draw,y_draw) (1.*.ratio, 1./.GameVars.tile_size)
 end
 
-let make_enemy name id (win : Window.window) = 
+let make_enemy seed id (win : Window.window) x y difficulty = 
+  Random.init (seed + id);
+  let name = 
+    GameVars.enemy_objects.(Random.int (Array.length GameVars.enemy_objects)) in
   let animations = Animations.load_directions name (Window.get_renderer win) in
   let curr_anim = Animations.anim_from_dir_name animations "down" "idle" in
+  let mhealth = Random.float 0.4 *. difficulty +. 0.8 *. 100. |> int_of_float in
+  let atk = Random.float 0.8 *. difficulty +. 0.7 *. 10. in
+  let spd = Random.float 0.8 *. difficulty +. 0.7 *. 8. |> int_of_float in
   {
     e = {
       animations = animations;
@@ -35,17 +41,17 @@ let make_enemy name id (win : Window.window) =
       curr_frame_num = 0;
       direction = Down;
       size = animations |> List.hd |> Animations.size;
-      bounding_box = (16,13);
-      bounding_box_pos = (0,2);
+      bounding_box = GameVars.boundbox_wh name;
+      bounding_box_pos = GameVars.boundbox_xy name;
       name = name;
       frame = Animations.frame curr_anim 0; 
-      pos = 5.,2.;
-      curr_tile = (5,2);
+      pos = x, y;
+      curr_tile =(int_of_float x,int_of_float y);
     };
     id = id;
-    max_health = 100;
+    max_health = mhealth;
     aggro_on = true;
-    health = 100;
+    health = mhealth;
     state = EIdle;
-    unique_stats = {attack = 10.; movement_speed = 5};
+    unique_stats = {attack = atk; movement_speed = spd};
   }

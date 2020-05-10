@@ -213,7 +213,7 @@ let change_state_input player input st =
       | _ -> change_state player (Move dir) st end
   | None -> change_state player Idle st
 
-let reverse_diection = function 
+let reverse_direction = function 
   | Left -> Right
   | Up -> Down
   | Right -> Left
@@ -242,7 +242,7 @@ let take_damage st player =
        health = player.health - calculate_attack player.attacking_enemies;
        last_damage = Window.get_time ();} in 
     change_state new_player 
-      (Knock (reverse_diection (dir_of_vec (subtract (List.hd player.attacking_enemies).e.pos player.e.pos)), Window.get_time ())) st 
+      (Knock (reverse_direction (dir_of_vec (subtract (List.hd player.attacking_enemies).e.pos player.e.pos)), Window.get_time ())) st 
   else player 
 
 let player_updater (st:state) (player:Player.t) = 
@@ -291,39 +291,51 @@ let player_updater (st:state) (player:Player.t) =
       (change_state player Idle st),[] else
       {player with e = new_e;},[]
 
+let take_damage_enemy st cols vec_to_player (enemy: Enemy.t) = 
+  if List.mem enemy.id cols 
+  then
+    {enemy with 
+     health = enemy.health -  player_attack st ;
+     state = EKnock 
+         (reverse_direction (dir_of_vec (vec_to_player)), Window.get_time ());} 
+  else enemy 
+
 (** [enemy_updater st enemy] returns a new [Enemy.t] which represents the
     changes to [enemy] imposed by [st].  *)
-let enemy_updater (st:state) (cols: entity_id list) (enemy:Enemy.t)  =
+let enemy_updater (st: state) (cols: entity_id list) (enemy: Enemy.t)  =
   let enemy = {enemy with 
-               e = update_animation enemy.e st.last_anim_frame;
-               health = enemy.health - 
-                        if List.mem enemy.id cols then player_attack st else 0}
+               e = update_animation enemy.e st.last_anim_frame;}
   in
   let p = st.current_room.player in 
   let vec_to_player = Vector.subtract p.e.pos enemy.e.pos in 
+  let enemy = enemy |> take_damage_enemy st cols vec_to_player in 
+  let dir_player = (Vector.dir_of_vec vec_to_player) in 
+  let aggro = not 
+      (distance p.e.pos enemy.e.pos > 6. || 
+       (enemy.e.direction <> dir_player && distance p.e.pos enemy.e.pos > 3.)) 
+  in 
+  let enemy = {enemy with aggro_on = aggro} in
   let enemy = 
     begin
-      let dir = (Vector.dir_of_vec vec_to_player) in 
-      if (distance p.e.pos enemy.e.pos > 6. || 
-          (enemy.e.direction <> dir && distance p.e.pos enemy.e.pos > 3.)) then 
+      if (enemy.aggro_on) then 
+        match enemy.state with 
+        | EMove d when d = dir_player -> enemy
+        | EKnock _ -> enemy
+        | _ ->
+          {enemy with 
+           state = EMove dir_player; 
+           e = {enemy.e with 
+                direction = dir_player; 
+                curr_anim = (Entity.get_anim enemy.e dir_player "walk");
+                curr_frame_num = 0;}; 
+
+          } else       
         {enemy with 
          state = EIdle;
          e = {enemy.e with
               curr_anim = (Entity.get_anim enemy.e enemy.e.direction "idle");
               curr_frame_num = 0;}; 
         } 
-      else 
-        match enemy.state with 
-        | EMove d when d = dir -> enemy
-        |_ ->
-          {enemy with 
-           state = EMove dir; 
-           e = {enemy.e with 
-                direction = dir; 
-                curr_anim = (Entity.get_anim enemy.e dir "walk");
-                curr_frame_num = 0;}; 
-
-          } 
     end 
   in 
   match enemy.state with
@@ -337,6 +349,13 @@ let enemy_updater (st:state) (cols: entity_id list) (enemy:Enemy.t)  =
     in 
     {enemy with 
      e = new_e},(List.mem (CPlayer st.current_room.player) collisions )
+  | EKnock (dir, time) ->     
+    let new_e,collisions =  try_movement_vector enemy.e st.current_room 
+        (scale_vec 0.15 (vec_of_dir dir)) in 
+    if (Window.get_time () - time > 100) then 
+      {enemy with state = EIdle;},false else
+      {enemy with e = new_e;},false
+
   |_ -> failwith "unexpected enemy state"
 
 let item_updater (st:state) (item:Item.t) : Item.t option =
@@ -631,14 +650,13 @@ let rec game_loop st time =
     else room_updater st st.current_room in
 
   let input = Window.input_query st.input in
-  let st = { running = not (List.mem Window.esc input) || 
+  let st = { st with 
+             running = not (List.mem Window.esc input) || 
                        not (List.mem Window.q input);
              current_room = next_room;
-             window = st.window;
              input = input;
              last_anim_frame = begin let time = Window.get_time () in  
                if time - st.last_anim_frame > GameVars.anim_spf_in_milli 
                then time else st.last_anim_frame end;
-             icons = st.icons;
            } in
   game_loop st curr_time

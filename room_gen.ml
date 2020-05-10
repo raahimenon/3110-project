@@ -10,7 +10,7 @@ let sample_viable (output : Room.tile option array array) (i : int) (j : int)
       | Some t when t <> s.(n).(m) -> viable := false	
       | other -> ()	
     done;	
-  done;	
+  done;
   !viable
 
 (** [reflect_sample sample] returns [sample] reflected over the x 
@@ -380,6 +380,10 @@ let generate_room (seed : int) (input : Room.tile array array)
 
   (* Empty tile array for the final layout *)
   let output = Array.make output_rows (Array.make output_cols None) in
+  (* Seed floor tiles *)
+  for i = 0 to ((min output_rows output_cols) - 1 ) / 5 do
+    output.(i * 5).(i * 5) <- Some (!ft_ref.(0))
+  done;
 
   (* Seed floor tiles *)
   seed_floor_tiles output;
@@ -521,7 +525,6 @@ let generate_room (seed : int) (input : Room.tile array array)
 
   (* TODO: Place enemies *)
   let enemy_coords = get_enemy_coords difficulty !attempt_seed !tiles in
-  print_endline ("Enemies placed: " ^ string_of_int (Array.length enemy_coords));
   let enemies = [] in
 
   (* TODO: Place items *)

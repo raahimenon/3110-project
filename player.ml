@@ -73,7 +73,7 @@ let make_player name id (win : Window.window) x y=
     attacking_enemies = [];
     last_damage = -500;
     max_health = 100;
-    health = 50;
+    health = 100;
     state = Idle;
     unique_stats = {attack = 10.; movement_speed = 10};
     inventory_slot = 0;

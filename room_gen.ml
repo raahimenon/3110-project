@@ -311,6 +311,33 @@ let generate_room (seed : int) (input : Room.tile array array)
     done
   done;
 
+  let counts_as_wall tiles x y = 
+    try match tiles.(y).(x) with |Room.Wall _ -> 1 |_ -> 0 
+    with e -> 1 in
+  let count_walls_around tiles x y = 
+    counts_as_wall tiles (x-1) (y-1) +
+    counts_as_wall tiles (x) (y-1) +
+    counts_as_wall tiles (x+1) (y-1) +
+    counts_as_wall tiles (x+1) (y) +
+    counts_as_wall tiles (x+1) (y+1) +
+    counts_as_wall tiles (x) (y+1) +
+    counts_as_wall tiles (x-1) (y+1) +
+    counts_as_wall tiles (x-1) (y) in
+
+  let exit_coords = entry_coords in
+  let rec get_exit seen_tiles visited_tiles curr_tile = 
+    let ctile_x, ctile_y, cdist = curr_tile in
+    let utile = match Hashtbl.find_opt seen_tiles (ctile_x, ctile_y - 1) with 
+      |Some d -> d |None -> Int.max_int in
+    let dtile = match Hashtbl.find_opt seen_tiles (ctile_x, ctile_y + 1) with 
+      |Some d -> d |None -> Int.max_int in
+    let ltile = match Hashtbl.find_opt seen_tiles (ctile_x - 1, ctile_y) with
+      |Some d -> d |None -> Int.max_int in
+    let rtile = match Hashtbl.find_opt seen_tiles (ctile_x + 1, ctile_y) with
+      |Some d -> d |None -> Int.max_int in ()
+  in
+
+
   (* TODO: Place enemies *)
   let enemies = [] in
 
@@ -319,24 +346,13 @@ let generate_room (seed : int) (input : Room.tile array array)
 
   let items = 
     Random.init seed;
-    let counts_as_wall tiles x y = 
-      try match tiles.(y).(x) with |Room.Wall _ -> 1 |_ -> 0 
-      with e -> 1 in
-    let count_walls_around tiles x y = 
-      counts_as_wall tiles (x-1) (y-1) +
-      counts_as_wall tiles (x) (y-1) +
-      counts_as_wall tiles (x+1) (y-1) +
-      counts_as_wall tiles (x+1) (y) +
-      counts_as_wall tiles (x+1) (y+1) +
-      counts_as_wall tiles (x) (y+1) +
-      counts_as_wall tiles (x-1) (y+1) +
-      counts_as_wall tiles (x-1) (y) in
     let rec place_items tiles accu x y =
       let next_x = if x + 1 = Array.length tiles.(0) then 0 else x + 1 in
       let next_y = if next_x = 0 then y+1 else y in
       if y > Array.length tiles then accu
       else if Random.float 1. > GameVars.item_spawn_probability && 
               counts_as_wall tiles x y = 0 &&
+              !entry_coords <> (float_of_int x,float_of_int y) &&
               count_walls_around tiles x y > GameVars.item_spawn_threshold then 
         let id, lst = accu in 
         place_items tiles 

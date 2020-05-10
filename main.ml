@@ -9,7 +9,7 @@ open Enemy
 
 let main () = 
 
-  let () = print_string "JSON File to Load in Saves Folder (If unsure, type '0.json'):"  in
+  let () = print_string "JSON File to Load in Saves Folder (If unsure, leave blank'):"  in
   let load_file = read_line () in
 
   let window = Window.create_window "3110 Project" (GameVars.width * (int_of_float GameVars.tile_size)) (GameVars.height * (int_of_float GameVars.tile_size)) in
@@ -23,7 +23,9 @@ let main () =
   let time = Window.get_time () in
   Gamestate.game_loop 
     {running = true;
-     current_room = Load.load load_file window;
+     current_room = begin 
+       try Load.load load_file window 
+       with e -> Room_gen.simple_gen (Random.int 1073741823) window end;
      window = window;
      input = [];
      icons = Animations.load_icons (Window.get_renderer window);

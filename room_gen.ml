@@ -385,11 +385,6 @@ let generate_room (seed : int) (input : Room.tile array array)
     output.(i * 5).(i * 5) <- Some (!ft_ref.(0))
   done;
 
-  (* 3D boolean array represents the wave *)
-  let wave =
-    generate_wave output_rows output_cols sample_dim samples output
-  in
-
   (* Seed floor tiles *)
   seed_floor_tiles output;
 
@@ -530,7 +525,6 @@ let generate_room (seed : int) (input : Room.tile array array)
 
   (* TODO: Place enemies *)
   let enemy_coords = get_enemy_coords difficulty !attempt_seed !tiles in
-  print_endline ("Enemies placed: " ^ string_of_int (Array.length enemy_coords));
   let enemies = [] in
 
   (* TODO: Place items *)

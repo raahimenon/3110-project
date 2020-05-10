@@ -49,7 +49,7 @@ module Player : (Entity with type t = player_type)  = struct
         | _ -> () end end
 end
 
-let make_player name id (win : Window.window)= 
+let make_player name id (win : Window.window) x y= 
   let animations = Animations.load_directions name (Window.get_renderer win) in
   let curr_anim = Animations.anim_from_dir_name animations "down" "idle" in
   {
@@ -63,8 +63,8 @@ let make_player name id (win : Window.window)=
        bounding_box_pos = GameVars.boundbox_xy name;
        name = name;
        frame = Animations.frame curr_anim 0; 
-       pos = 1.,2.;
-       curr_tile = 1,2;};
+       pos = x,y;
+       curr_tile = int_of_float x,int_of_float y;};
     id = id;
     tile_destination = 0,0;
     being_attacked = false;

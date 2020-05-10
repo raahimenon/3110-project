@@ -341,16 +341,23 @@ let generate_room (seed : int) (input : Room.tile array array)
         let id, lst = accu in 
         place_items tiles 
           ((id + 1),
-           ((Item.make_item !attempt_seed (fst accu) window x y) :: lst))
+           ((Item.make_item 
+               !attempt_seed 
+               (fst accu) 
+               window 
+               (float_of_int x) 
+               (float_of_int y)) :: lst))
           next_x next_y
       else place_items tiles accu next_x next_y in
     place_items !tiles (0, []) 0 0 |> snd in
 
-  let basic_player = (Player.make_player "link" 0 window) in
+  let basic_player = 
+    (Player.make_player "link" 0 window (fst !entry_coords) (snd !entry_coords))
+  in
 
   {
-    seed = !attempt_seed;
-    player = {basic_player with e = {basic_player.e with pos = !entry_coords}};
+    seed = seed;
+    player = basic_player;
     enemies = enemies;
     items = items;
     tiles = !tiles;
@@ -379,9 +386,7 @@ let simple_gen (seed : int) (window : Window.window): Room.t =
       [| w ; w ; w ; f ; w ; w ; w ; w ; w ; w ; w ; w ; f ; w ; w ; w |];
     |]
   in
-  Random.init seed;
-
-  generate_room (Random.int 20010827) (big_chungus_input) (3) (20) (20) (0) (window)
+  generate_room seed (big_chungus_input) (3) (20) (20) (0) (window)
   |> (fun room -> print_endline ""; print_int seed; print_endline "";
 
        (room.tiles |> Array.iter

@@ -6,6 +6,7 @@ type stat_type = Combat of Combat.t | Buff of Buff.t
 type entity_id = int
 
 type item_type = {
+  seed: int;
   e: Entity.e;
   pos: item_pos;
   id : entity_id;
@@ -44,19 +45,24 @@ let make_item seed id (win: Window.window) x y =
   in
   let animations = Animations.load_directions name (Window.get_renderer win) in
   let curr_anim = Animations.anim_from_dir_name animations "down" "idle" in
+  let int_x = int_of_float x in
+  let int_y = int_of_float y in
   {
-    e ={animations = animations;
-        curr_anim = curr_anim;
-        curr_frame_num = 0;
-        size = animations |> List.hd |> Animations.size ;
-        bounding_box = GameVars.boundbox_wh name;
-        bounding_box_pos = GameVars.boundbox_xy name;
-        direction = Down;
-        name = name;
-        frame = Animations.frame curr_anim 0; 
-        pos = (float_of_int x, float_of_int y);
-        curr_tile = x, y;};
-    pos = Position (float_of_int x, float_of_int y);
+    seed = seed;
+    e ={
+      animations = animations;
+      curr_anim = curr_anim;
+      curr_frame_num = 0;
+      size = animations |> List.hd |> Animations.size ;
+      bounding_box = GameVars.boundbox_wh name;
+      bounding_box_pos = GameVars.boundbox_xy name;
+      direction = Down;
+      name = name;
+      frame = Animations.frame curr_anim 0; 
+      pos = (x, y);
+      curr_tile = int_x, int_y;};
+
+    pos = if x >= 0. then Position (x, y) else Inventory{index = int_x * -1 - 1};
     id = id;
     unique_stats = if combat = 0 then
         let mhealth = if Random.int 2 = 1 then Random.int 10 + 1 else 0 in

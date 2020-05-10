@@ -14,7 +14,7 @@ let main () =
 
   let window = Window.create_window "3110 Project" (GameVars.width * (int_of_float GameVars.tile_size)) (GameVars.height * (int_of_float GameVars.tile_size)) in
 
-  (* let default_enemy = make_enemy "link" 3 window in  *)
+  let default_enemy = make_enemy "link" 3 window in  
 
   (* let default_room = {(Load.load load_file window)  with items =[default_item; default_item2]; enemies = [default_enemy;]} in *)
 
@@ -43,7 +43,7 @@ let main () =
   let time = Window.get_time () in
   Gamestate.game_loop 
     {running = true;
-     current_room = Option.get !rm_ref;
+     current_room = {(Option.get !rm_ref) with enemies = [default_enemy];} ;
      window = window;
      input = [];
      icons = Animations.load_icons (Window.get_renderer window);

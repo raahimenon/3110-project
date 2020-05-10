@@ -40,7 +40,7 @@ let make_enemy name id (win : Window.window) =
       name = name;
       frame = Animations.frame curr_anim 0; 
       pos = 5.,2.;
-      curr_tile =(5,2);
+      curr_tile = (5,2);
     };
     id = id;
     max_health = 100;

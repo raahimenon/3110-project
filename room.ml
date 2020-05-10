@@ -111,7 +111,8 @@ let collisions_with_entity rm (e:Entity.e) (ignore : Entity.e)=
                    |> generate_tile_with_cords rm in 
   let tiles = List.filter (check_wall_collisions e) tile_array in 
   (List.map (fun item -> CItem item) items)@
-  (List.map (fun (tile,(a,b)) ->  CWall tile) tiles) @
+  (List.map (fun (tile,(a,b)) ->  
+       match tile with | Exit _ -> CExit tile | _ -> CWall tile) tiles) @
   (List.map (fun enemy -> CEnemy enemy) enemies) @ 
   (List.map (fun player -> CPlayer player) players)
 

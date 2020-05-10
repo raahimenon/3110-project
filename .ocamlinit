@@ -1,6 +1,7 @@
 #require "oUnit";;
 #require "sdl2";;
 #require "yojson";;
+#require "threads.posix";;
 #directory "_build";;
 #load "gameVars.cmo";;
 #load "animations.cmo";;

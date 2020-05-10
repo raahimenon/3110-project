@@ -63,8 +63,7 @@ let render (win : window) : unit =
 
 let exit_window (win : window) : unit =
   Sdlwindow.destroy (fst win);
-  Sdl.quit ();
-  exit 0
+  Sdl.quit ()
 
 let rec print_list lst = match lst with
   | [] -> print_endline ""
@@ -115,7 +114,13 @@ let draw_hud_box (win : window) slot : unit =
   Sdlrender.draw_line2 rndr (ts + 2 * GameVars.hud_bezel_px, 0) (ts + 2 * GameVars.hud_bezel_px, h);
   Sdlrender.draw_rect rndr (Sdlrect.make4 (GameVars.hud_bezel_px - 3) ((2 * slot + 1) * (ts) - 2) (ts + 6) (ts + 6));
   Sdlrender.draw_line2 rndr (w - ts - 1 - 2*GameVars.hud_bezel_px, 0) (w - ts - 1- 2*GameVars.hud_bezel_px, h);
-  (* Sdlrender.draw_line2 rndr (w - ts - 2*GameVars.hud_bezel_px, h / 2) (w, h / 2); *)
+  Sdlrender.draw_line2 rndr 
+    (w - ts - 2*GameVars.hud_bezel_px, 
+     (4. +. 10./.GameVars.tile_size +. GameVars.vrad)*.GameVars.tile_size 
+     |> int_of_float |> (+) 1) 
+    (w,  
+     (4. +. 10./.GameVars.tile_size +. GameVars.vrad)*.GameVars.tile_size 
+     |> int_of_float |> (+) 1);
   Sdlrender.set_draw_color rndr (0, 0, 0) 1
 
 let health_col_ratio ratio = 

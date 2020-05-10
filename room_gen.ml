@@ -520,7 +520,7 @@ let generate_room (seed : int) (input : Room.tile array array)
                  (Window.get_renderer window));
 
   (* TODO: Place enemies *)
-  let enemy_coords = get_enemy_coords difficulty !attempt_seed !tiles in
+  let enemy_coords = get_enemy_coords difficulty seed !tiles in
   print_endline ("Enemies placed: " ^ string_of_int (Array.length enemy_coords));
   let enemies = [] in
 
@@ -541,7 +541,7 @@ let generate_room (seed : int) (input : Room.tile array array)
         place_items tiles 
           ((id + 1),
            ((Item.make_item 
-               !attempt_seed 
+               seed 
                (fst accu) 
                window 
                (float_of_int x) 

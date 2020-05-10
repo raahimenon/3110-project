@@ -23,6 +23,7 @@ let inventory_size = vrad |> int_of_float
 
 let combat_objects = [|"sword"|]
 let buff_objects = [|"blue-rupee"|]
+let enemy_objects = [|"red-frog"|]
 
 let item_spawn_threshold = 4
 let item_spawn_probability = 0.5

@@ -25,7 +25,10 @@ module  Enemy : (Entity with type t = enemy_type)  = struct
     Window.draw_rect_col win (Window.health_col_ratio ratio) (x_draw,y_draw) (1.*.ratio, 1./.GameVars.tile_size)
 end
 
-let make_enemy name id (win : Window.window) = 
+let make_enemy seed id (win : Window.window) x y = 
+  Random.init (seed + id);
+  let name = 
+    GameVars.enemy_objects.(Random.int (Array.length GameVars.enemy_objects)) in
   let animations = Animations.load_directions name (Window.get_renderer win) in
   let curr_anim = Animations.anim_from_dir_name animations "down" "idle" in
   {

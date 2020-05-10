@@ -15,4 +15,4 @@ type enemy_type =  {
 }
 module Enemy : Entity with type t = enemy_type
 
-val make_enemy : name_t -> entity_id -> Window.window -> enemy_type
+val make_enemy : int -> entity_id -> Window.window -> float -> float -> enemy_type

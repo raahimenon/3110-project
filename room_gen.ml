@@ -244,27 +244,127 @@ let remove_diagonals (r : Room.tile array array) : unit =
 let clean_room (r : Room.tile array array) : unit =	
   (* open up diagonal gaps *)	
   remove_diagonals r	
+
 let generate_wave (output_rows : int) (output_cols : int) (sample_dim : int) 	
     (samples : Room.tile array array array)	
-    (output : Room.tile option array array) (seed_spacing : int)	
-  : bool array array array =	
+    (output : Room.tile option array array) : bool array array array =	
   Array.init (output_rows - sample_dim + 1)	
     (fun i -> Array.init (output_cols - sample_dim + 1) 	
         (fun j -> Array.init (Array.length samples) 	
             (fun n -> sample_viable output i j samples.(n))))
 
-(** Central method. Too sleepy to document. Haven't even test it yet. *)
-let generate_room (seed : int) (input : Room.tile array array)
-    (sample_dim : int) (output_rows : int) (output_cols : int)
-    (difficulty : int) (window : Window.window) : Room.t =
-  (* Validate inputs *)
-  if (sample_dim > Array.length input)
+let seed_floor_tiles (output : Room.tile option array array) : unit =
+  for i = 0 to ((min (Array.length output) (Array.length output.(0))) - 1 ) / 5
+  do output.(i * 5).(i * 5) <- Some (!ft_ref.(0))	
+  done
+
+let validate_inputs (input : Room.tile array array) (sample_dim : int)
+    (output_rows : int) (output_cols : int) (difficulty : float) : unit =
+  if (sample_dim <= 0)
+  || (sample_dim > Array.length input)
   || (sample_dim > Array.length input.(0))
   || (sample_dim > output_rows)
   || (sample_dim > output_cols)
-  (* TODO: validate difficulty *)
+  || (difficulty > 1.0)
+  || (difficulty < 0.0)
   then failwith "invalid inputs at generate_room"
-  else ();
+  else ()
+
+let point_distance_vector (p0 : float * float) (p1 : float * float)
+  : float * float =
+  (fst p1 -. fst p0, snd p1 -. snd p0)
+
+let dot_product (v0 : float * float) (v1 : float * float) : float =
+  (fst v0 *. fst v1) +. (snd v0 *. snd v1)
+
+let vector_magnitude (v : float * float) =
+  sqrt ((fst v *. fst v) +. (snd v *. snd v))
+
+(** [get_perlin_weight v0 v1 v2 v3] calculates the interpolated dot products 
+    for four vectors. Due to the coarse-grained nature of a tile-based system, 
+    a simple weighted average is used for its computational efficiency, even 
+    though typical perlin noise generation utilizes more sophisticated 
+    interpolation methods. *)
+let get_perlin_weight (v0 : float * float) (v1 : float * float)
+    (v2 : float * float) (v3 : float * float) : float =
+  (* Get random sample point *)
+  let spt = (Random.float 1.0, Random.float 1.0) in
+
+  (* Get distance vectors *)
+  let d0 = point_distance_vector (0.0, 1.0) spt in
+  let d1 = point_distance_vector (1.0, 1.0) spt in
+  let d2 = point_distance_vector (0.0, 0.0) spt in
+  let d3 = point_distance_vector (1.0, 0.0) spt in
+
+  (* Get dot products of gradients and distance vectors *)
+  let p0 = dot_product v0 d0 in
+  let p1 = dot_product v1 d1 in
+  let p2 = dot_product v2 d2 in
+  let p3 = dot_product v3 d3 in
+
+  (* Take weighted average *)
+  let avg =
+    ((p0 *. vector_magnitude d0)
+     +. (p1 *. vector_magnitude d1)
+     +. (p2 *. vector_magnitude d2)
+     +. (p3 *. vector_magnitude d3))
+    /. ((vector_magnitude d0)
+        +. (vector_magnitude d1)
+        +. (vector_magnitude d2)
+        +. (vector_magnitude d3))
+  in
+  avg
+
+(** [get_enemy_coords difficulty seed r] returns an array of coordinates where 
+    enemies will be spawned on a given floor based on the inputs. The Perlin Noise 
+    algorithm is used to select coordinates. More information on this algorithm 
+    can be found at https://dl.acm.org/doi/pdf/10.1145/325165.325247. *)
+let get_enemy_coords (difficulty : float) (seed : int)
+    (r : Room.tile array array) : (float * float) array =
+  (* Initialize RNG *)
+  Random.init seed;
+
+  (* Generate gradient vector map *)
+  let vectors =
+    Array.init (Array.length r + 1)
+      (fun i -> Array.init (Array.length r.(0) + 1)
+          (fun j -> let angle = Random.float (2.0 *. Float.pi) in
+            ((Float.cos angle), (Float.sin angle))))
+  in
+
+  (* Calculate perlin weights *)
+  let weights =
+    Array.init (Array.length r)
+      (fun i -> Array.init (Array.length r.(0))
+          (fun j -> (get_perlin_weight
+                       vectors.(i).(j)
+                       vectors.(i).(j + 1)
+                       vectors.(i + 1).(j)
+                       vectors.(i + 1).(j + 1)
+                     +. 1.0)
+                    /. 2.0))
+  in
+
+  (* Filter for wall collisions and difficulty caps *)
+  let coords = Queue.create () in
+  weights |> Array.iteri
+    (fun i row ->
+       row |> Array.iteri (fun j w ->
+           print_float w; print_string " ";
+           if (w < Float.pow difficulty 0.7) && (match r.(i).(j) with
+               | Room.Wall w -> false
+               | other -> true)
+           then (Queue.add (float_of_int i, float_of_int j) coords)
+           else ()));
+
+  coords |> Queue.to_seq |> Array.of_seq
+
+(** Central method. Too sleepy to document. Haven't even test it yet. *)
+let generate_room (seed : int) (input : Room.tile array array)
+    (sample_dim : int) (output_rows : int) (output_cols : int)
+    (difficulty : float) (window : Window.window) : Room.t =
+  (* Validate inputs *)
+  validate_inputs input sample_dim output_rows output_cols difficulty;
 
   (* Complexity switches *)
   let rotations_on = true in
@@ -281,19 +381,15 @@ let generate_room (seed : int) (input : Room.tile array array)
   (* Empty tile array for the final layout *)
   let output = Array.make output_rows (Array.make output_cols None) in
 
-  (* Seed floor tiles *)	
-  for i = 0 to ((min output_rows output_cols) - 1 ) / 5 do	
-    output.(i * 5).(i * 5) <- Some (!ft_ref.(0))	
-  done;	
+  (* Seed floor tiles *)
+  seed_floor_tiles output;
 
   (* 3D boolean array represents the wave *)	
-  let wave =	
-    generate_wave output_rows output_cols sample_dim samples output 5	
-  in
+  let wave = generate_wave output_rows output_cols sample_dim samples output in
 
   (* Seed should vary between attempts *)
   Random.init seed;
-  let attempt_seed = ref (Random.bits ())in
+  let attempt_seed = ref (Random.bits ()) in
 
   (* Generative loop *)
   let tiles : Room.tile array array ref = ref [||] in
@@ -349,6 +445,8 @@ let generate_room (seed : int) (input : Room.tile array array)
   done;
 
   (* TODO: Place enemies *)
+  let enemy_coords = get_enemy_coords difficulty !attempt_seed !tiles in
+  print_endline ("Enemies placed: " ^ string_of_int (Array.length enemy_coords));
   let enemies = [] in
 
   (* TODO: Place items *)
@@ -424,7 +522,7 @@ let simple_gen (seed : int) (window : Window.window): Room.t =
       [| w ; w ; w ; f ; w ; w ; w ; w ; w ; w ; w ; w ; f ; w ; w ; w |];
     |]
   in
-  generate_room seed (big_chungus_input) (3) (20) (20) (0) (window)
+  generate_room seed (big_chungus_input) (3) (20) (20) (0.1) (window)
   |> (fun room -> print_endline ""; print_int seed; print_endline "";
 
        (room.tiles |> Array.iter

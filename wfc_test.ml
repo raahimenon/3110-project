@@ -19,7 +19,7 @@ let wfc_test () =
   let time = Window.get_time () in
   Gamestate.game_loop 
     {running = true;
-     current_room = Room_gen.simple_gen 0 window;
+     current_room = Room_gen.simple_gen random_seed window;
      window = window;
      input = [];
      icons = Animations.load_icons (Window.get_renderer window);

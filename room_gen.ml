@@ -1,3 +1,18 @@
+let ft_ref = ref [||]
+(* [sample_viable output i j s] checks if the sample [s] could be placed in 
+   [output] at coordinates [(i, j)]. *)
+let sample_viable (output : Room.tile option array array) (i : int) (j : int)
+    (s : Room.tile array array) : bool =
+  let viable = ref true in
+  for n = 0 to Array.length s - 1 do
+    for m = 0 to Array.length s.(n) - 1 do
+      match output.(i + n).(j + m) with
+      | Some t when t <> s.(n).(m) -> viable := false
+      | other -> ()
+    done;
+  done;
+  !viable
+
 (** [reflect_sample sample] returns [sample] reflected over the x 
     axis. Reflections over the y axis can be achieved by rotating the sample
     180 degrees before calling this function. *)
@@ -140,16 +155,7 @@ let rec collapse_loop (samples : Room.tile array array array)
       <- (samples |> Array.map
             (* Check that sample is viable by comparing each predicted tile 
                with partially collapsed output *)
-            (fun s ->
-               let viable = ref true in
-               for n = 0 to Array.length s - 1 do
-                 for m = 0 to Array.length s.(n) - 1 do
-                   match output.(i + n).(j + m) with
-                   | Some t when t <> s.(n).(m) -> viable := false
-                   | other -> ()
-                 done;
-               done;
-               !viable););
+            (sample_viable output i j));
       if (Array.mem true wave.(i).(j)) then () else (
         print_endline ""; 
         for n = 0 to Array.length samples.(0) - 1 do
@@ -221,6 +227,36 @@ let rec collapse_loop (samples : Room.tile array array array)
            (fun row -> row |> Array.to_list |> List.filter_map
                          (fun o -> o) |> Array.of_list)))
 
+(* TODO: remove this placeholder *)
+
+let remove_diagonals (r : Room.tile array array) : unit =
+  for i = 0 to Array.length r - 2 do
+    for j = 0 to Array.length r.(0) - 2 do
+      match r.(i).(j), r.(i + 1).(j), r.(i).(j + 1), r.(i + 1).(j + 1) with
+      | Floor f1, Wall w1, Wall w2, Floor f2 -> 
+        (r.(i + 1).(j) <- Floor f1;
+         r.(i).(j + 1) <- Floor f1;)
+      | Wall w1, Floor f1, Floor f2, Wall w2 -> 
+        (r.(i).(j) <- Floor f1;
+         r.(i + 1).(j + 1) <- Floor f1;)
+      | _ -> ()
+    done
+  done
+
+(** [cleam_room r] returns the room r with well connected spaces.- *)
+let clean_room (r : Room.tile array array) : unit =
+  (* open up diagonal gaps *)
+  remove_diagonals r
+
+let generate_wave (output_rows : int) (output_cols : int) (sample_dim : int) 
+    (samples : Room.tile array array array)
+    (output : Room.tile option array array) (seed_spacing : int)
+  : bool array array array =
+  Array.init (output_rows - sample_dim + 1)
+    (fun i -> Array.init (output_cols - sample_dim + 1) 
+        (fun j -> Array.init (Array.length samples) 
+            (fun n -> sample_viable output i j samples.(n))))
+
 (** Central method. Too sleepy to document. Haven't even test it yet. *)
 let generate_room (seed : int) (input : Room.tile array array)
     (sample_dim : int) (output_rows : int) (output_cols : int)
@@ -246,13 +282,17 @@ let generate_room (seed : int) (input : Room.tile array array)
   (* Weights *)
   weight_ref := samples |> Array.map (count_instances samples);
 
-  (* 3D boolean array represents the wave *)
-  let wave = Array.make (output_rows - sample_dim + 1)
-      (Array.make (output_cols - sample_dim + 1) 
-         (Array.make (Array.length samples) true)) in
-
   (* Empty tile array for the final layout *)
   let output = Array.make output_rows (Array.make output_cols None) in
+  (* Seed floor tiles *)
+  for i = 0 to ((min output_rows output_cols) - 1 ) / 5 do
+    output.(i * 5).(i * 5) <- Some (!ft_ref.(0))
+  done;
+
+  (* 3D boolean array represents the wave *)
+  let wave =
+    generate_wave output_rows output_cols sample_dim samples output 5
+  in
 
   (* Seed should vary between attempts *)
   Random.init seed;
@@ -260,7 +300,7 @@ let generate_room (seed : int) (input : Room.tile array array)
 
   (* Generative loop *)
   let tiles : Room.tile array array ref = ref [||] in
-  print_string ("initial tiles array length: "^(string_of_int (Array.length !tiles)^"\n"));
+  print_string ("\ninitial tiles array length: "^(string_of_int (Array.length !tiles)^"\n"));
   for attempt = 1 to attempts do
     if (Array.length !tiles = 0)
     then
@@ -297,7 +337,7 @@ let generate_room (seed : int) (input : Room.tile array array)
   tiles := bounded_tiles;
 
   (* TODO: Clean floating rooms *)
-
+  clean_room !tiles;
 
   (* TODO: Place entrance and exit *)
   let entry_coords = ref (0., 0.) in
@@ -366,6 +406,7 @@ let generate_room (seed : int) (input : Room.tile array array)
 let simple_gen (seed : int) (window : Window.window): Room.t =
   let f = Room.Floor (Animations.load_image "./sprites/room/floor.bmp" (Window.get_renderer window)) in
   let w = Room.Wall (Animations.load_image "./sprites/room/wall.bmp" (Window.get_renderer window)) in
+  ft_ref := [|f|];
   let big_chungus_input = 
     [|
       [| w ; w ; w ; f ; w ; w ; w ; w ; w ; w ; w ; w ; f ; w ; w ; w |];

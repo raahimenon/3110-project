@@ -69,7 +69,7 @@ let make_player name id (win : Window.window) x y=
     tile_destination = 0,0;
     being_attacked = false;
     max_health = 100;
-    health = 100;
+    health = 50;
     state = Idle;
     unique_stats = {attack = 10.; movement_speed = 10};
     inventory_slot = 0;

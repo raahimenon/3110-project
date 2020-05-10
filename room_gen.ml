@@ -524,8 +524,16 @@ let generate_room (seed : int) (input : Room.tile array array)
                  (Window.get_renderer window));
 
   (* TODO: Place enemies *)
-  let enemy_coords = get_enemy_coords difficulty !attempt_seed !tiles in
-  let enemies = [] in
+  let enemy_coords = get_enemy_coords difficulty seed !tiles |> Array.to_list in
+  let enemies = 
+    Random.init seed;
+    let rec place_enemies num accu = function
+      | [] -> accu
+      | (x,y)::t -> 
+        place_enemies (num + 1) 
+          (Enemy.make_enemy seed num window x y difficulty :: accu)
+          t in 
+    place_enemies 0 [] enemy_coords in
 
   (* TODO: Place items *)
   (* TODO: respond to enemy density and/or entrance/exit distance *)
@@ -544,7 +552,7 @@ let generate_room (seed : int) (input : Room.tile array array)
         place_items tiles 
           ((id + 1),
            ((Item.make_item 
-               !attempt_seed 
+               seed 
                (fst accu) 
                window 
                (float_of_int x) 

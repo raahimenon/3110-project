@@ -15,4 +15,8 @@ type enemy_type =  {
 }
 module Enemy : Entity with type t = enemy_type
 
-val make_enemy : name_t -> entity_id -> Window.window -> enemy_type
+(** [make_enemy seed id w x y diff] creates an enemy with id [id] from seed 
+    [seed] at position [(x,y)] and difficulty level [diff] *)
+val make_enemy : 
+  int -> entity_id -> Window.window -> 
+  float -> float -> float -> enemy_type

@@ -26,4 +26,4 @@ type player_type =  {
 }
 module Player : Entity with type t = player_type
 
-val make_player : name_t -> entity_id -> Window.window -> player_type
+val make_player : name_t -> entity_id -> Window.window -> float -> float -> player_type

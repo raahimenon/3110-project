@@ -1,19 +1,15 @@
 open Yojson.Basic.Util
 
 let room_from_seed (s : int) win = 
-  let default_tiles = (Room.Floor (Animations.load_image "./sprites/room/floor.bmp" (Window.get_renderer win))) |> Array.make_matrix 11 11 in
-  Array.fill default_tiles.(0) 0 11 (Room.Wall (Animations.load_image "./sprites/room/wall.bmp" (Window.get_renderer win)));
-  Array.fill default_tiles.(10) 0 11 (Room.Wall (Animations.load_image "./sprites/room/wall.bmp" (Window.get_renderer win)));
-  Room.({
-      seed = s;
-      player = Player.make_player "link" 0 win; 
-      enemies =[];
-      items =[];
-      tiles = default_tiles
-    })
+  Room_gen.simple_gen s win
 
-let entity_from_seed_id (s : int) (id : int) (win : Window.window) = 
-  Item.make_item s id win 0 0
+let item_from_seed_id_pos 
+    (s : int) 
+    (id : int) 
+    (x:float) 
+    (y:float) 
+    (win : Window.window) = 
+  Item.make_item s id win x y
 
 let rec room_from_entities (rm : Room.t) (entities : (int * int * int * int) list) : Room.t =
   match entities with
@@ -25,6 +21,17 @@ let rec room_from_entities (rm : Room.t) (entities : (int * int * int * int) lis
       else rm in
     room_from_entities next_room t
 
+let item_from_json win json = 
+  let seed = member "seed" json |> to_int in
+  let id = member "id" json |> to_int in
+  let x = member "x" json |> to_float in
+  let y = member "y" json |> to_float in
+  let item = item_from_seed_id_pos seed id x y win in
+  match item.unique_stats with 
+  | Buff b -> 
+    {item with unique_stats = Buff {b with durability = member "durability" json |> to_int}}
+  | _ -> item
+
 let load s win =
   let json = try Yojson.Basic.from_file ("./saves/"^s) with e -> 
     print_string "File DNE - Are you sure this file exists in the saves folder?\n";
@@ -32,15 +39,15 @@ let load s win =
     exit 0 in
   let seed = member "seed" json |> to_int in
   let room = room_from_seed seed win in
-  let entities = 
-    member "entities" json 
-    |> to_list 
-    |> List.map (fun (entity : Yojson.Basic.t) -> 
-        member "id" entity |> to_int,
-        member "x" entity |> to_int,
-        member "y" entity |> to_int,
-        member "health" entity |> to_int
-      )
-  in
-  room_from_entities room entities
+  let player_json = member "player" json in
+  let player = Player.make_player "link" 0 win (member "x" player_json |> to_float) (member "y" player_json |> to_float) in
+  let player = 
+    {player with
+     health = member "health" player_json |> to_int;
+     max_health = member "max_health" player_json |> to_int;
+     unique_stats = 
+       {attack = member "attack" player_json |> to_float;
+        movement_speed = member "speed" player_json |> to_int}} in
+  let items = member "items" json |> to_list |> List.map (item_from_json win) in
+  {room with items = items; player = player}
 

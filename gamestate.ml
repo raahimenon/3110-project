@@ -394,51 +394,180 @@ let room_updater st room =
    enemies = new_enemies;
    items = room.items |> List.filter_map (item_updater st) }
 
-let icons_of_int num st : Animations.image list = 
+let icons_of_int ?style:(style = 0) num st : Animations.image list = 
   let num = string_of_int num in
   let rec icons accu = function
     | str when str = "" -> accu
-    | s -> icons ((Animations.get_icon (String.sub s 0 1) st.icons)::accu) (String.sub s 1 (String.length s - 1)) in
+    | s -> icons ((Animations.get_icon 
+                     (String.sub s 0 1 ^ 
+                      if style > 0 then "p" else if style < 0 then "m" else "") 
+                     st.icons)::accu)
+             (String.sub s 1 (String.length s - 1)) in
   icons [] num |> List.rev
+
+let icons_of_float ?style:(style = 0) num st : Animations.image list = 
+  if Float.floor num = num then icons_of_int ~style:style (int_of_float num) st 
+  else
+    let num = string_of_float num in
+    let rec icons accu = function
+      | str when str = "" -> accu
+      | s -> 
+        let fname = String.sub s 0 1 in
+        icons ((Animations.get_icon 
+                  ((if fname = "." then "dot" else fname )^ 
+                   if style > 0 then "p" else if style < 0 then "m" else "") 
+                  st.icons)::accu) 
+          (String.sub s 1 (String.length s - 1)) in
+    icons [] num |> List.rev
+
+let rec get_buffs items (accu) : float * int * int * int * int * int =
+  let catk, cspd, bh, bmh, batk, bspd = accu in
+  match items with
+  | [] -> accu
+  | h::t -> begin match h with 
+      | Buff.Health h -> get_buffs t (catk, cspd, h, bmh, batk, bspd)
+      | Buff.Max_health mh -> get_buffs t (catk, cspd, bh, mh, batk, bspd)
+      | Buff.Attack atk -> get_buffs t (catk, cspd, bh, bmh, atk, bspd)
+      | Buff.Movement_speed spd -> get_buffs t (catk, cspd, bh, bmh, batk, spd)
+    end
 
 let draw_hud (st : state) = 
   let player = st.current_room.player in
   let ratio = float_of_int player.health /. (float_of_int player.max_health) in
+  let item = Room.get_item_slot st.current_room player.inventory_slot in
+  let combat_attack, combat_speed, buff_health, buff_mh, buff_atk, buff_spd
+    = match item with 
+    | Some i -> begin match i.unique_stats with 
+        |Combat {attack; movement_speed} -> attack, movement_speed, 0, 0, 0, 0
+        |Buff b -> get_buffs b.effect (0.,0,0,0,0,0) end
+    | None -> 0., 0, 0, 0, 0, 0 in
+  (* Initialize HUD box drawing *)
   Window.draw_hud_box st.window st.current_room.player.inventory_slot;
+  (* Draw HUD health bar *)
+  if(buff_health > 0) then begin
+    let buff_health_display = icons_of_int ~style:1 (buff_health) st in
+    Window.draw_image st.window (Animations.get_icon "+" st.icons)
+      (float_of_int GameVars.width -. 2.) 0.;
+    List.iteri 
+      (fun idx ic -> 
+         Window.draw_image st.window ic 
+           (float_of_int GameVars.width -. 2. +. 
+            (5./.GameVars.tile_size)+. 
+            (float_of_int (idx + 3 - List.length buff_health_display)) *. 
+            (9./.GameVars.tile_size))
+           (0.))
+      buff_health_display end
+  else ();
+  let health_display = (icons_of_int (player.health) st) in
+  List.iteri 
+    (fun idx ic -> 
+       Window.draw_image st.window ic 
+         (float_of_int GameVars.width -. 2. +. 
+          (5./.GameVars.tile_size)+. 
+          (float_of_int (idx + 3 - List.length health_display)) *. 
+          (9./.GameVars.tile_size))
+         (1.))
+    health_display;
   Window.draw_rect_col st.window 
     (Window.health_col_ratio ratio)
-    (float_of_int GameVars.width -. 1. -. GameVars.hud_bezel_tile,1.)
+    (float_of_int GameVars.width -. 1. -. 
+     GameVars.hud_bezel_tile,2.+.5./.GameVars.tile_size)
     (1., GameVars.vrad*.ratio);
   Window.draw_image_raw st.window
     (Animations.get_icon "hp" st.icons)
     (float_of_int GameVars.width -. 1. -. GameVars.hud_bezel_tile)
-    (1. -. 5./.GameVars.tile_size);
+    (2.);
+  List.iteri 
+    (fun idx ic -> 
+       Window.draw_image st.window ic 
+         (float_of_int GameVars.width -. 2. +. 
+          (2./.GameVars.tile_size)+. 
+          (float_of_int idx) *. 
+          (9./.GameVars.tile_size))
+         (2. +. 10./.GameVars.tile_size +. GameVars.vrad))
+    (icons_of_int (player.max_health) st);
+  if(buff_mh > 0) then begin
+    let buff_mh_display = icons_of_int ~style:1 (buff_mh) st in
+    Window.draw_image st.window (Animations.get_icon "+" st.icons)
+      (float_of_int GameVars.width -. 2.)
+      (3. +. 10./.GameVars.tile_size +. GameVars.vrad);
+    List.iteri 
+      (fun idx ic -> 
+         Window.draw_image st.window ic 
+           (float_of_int GameVars.width -. 2. +. 
+            (5./.GameVars.tile_size)+. 
+            (float_of_int (idx + 3 - List.length buff_mh_display)) *. 
+            (9./.GameVars.tile_size))
+           (3. +. 10./.GameVars.tile_size +. GameVars.vrad))
+      buff_mh_display end
+  else ();
+  (* Draw player stats *)
   Window.draw_image st.window
     (Animations.get_icon "attack" st.icons)
     (float_of_int GameVars.width -. 2.)
-    (2. +. (float_of_int GameVars.height -. 2.)/.2.);
+    (float_of_int GameVars.height -. 4.);
+  let atk_display = icons_of_int 
+      ~style:
+        (if combat_attack > 0. then 1 
+         else if combat_attack < 0. then -1 
+         else 0)
+      (player_attack st) st in
   List.iteri 
     (fun idx ic -> 
        Window.draw_image st.window ic 
          (float_of_int GameVars.width -. 2. +. 
           (5./.GameVars.tile_size)+. 
-          (float_of_int idx) *. 
+          (float_of_int (idx + 3 - List.length atk_display)) *. 
           (9./.GameVars.tile_size))
-         (2. +. (float_of_int GameVars.height -. 2.)/.2.))
-    (icons_of_int (player_attack st) st);
+         (float_of_int GameVars.height -. 4.))
+    atk_display;
+  if(buff_atk > 0) then begin
+    let buff_atk_display = icons_of_int ~style:1 (buff_atk) st in
+    Window.draw_image st.window (Animations.get_icon "+" st.icons)
+      (float_of_int GameVars.width -. 2.)
+      (float_of_int GameVars.height -. 1.);
+    List.iteri 
+      (fun idx ic -> 
+         Window.draw_image st.window ic 
+           (float_of_int GameVars.width -. 2. +. 
+            (5./.GameVars.tile_size)+. 
+            (float_of_int (idx + 3 - List.length buff_atk_display)) *. 
+            (9./.GameVars.tile_size))
+           (float_of_int GameVars.height -. 3.))
+      buff_atk_display end;
   Window.draw_image st.window
     (Animations.get_icon "speed" st.icons)
     (float_of_int GameVars.width -. 2.)
-    (5. +. (float_of_int GameVars.height -. 2.)/.2.);
+    (float_of_int GameVars.height -. 2.);
+  let spd_display = icons_of_int ~style:
+      (if combat_speed > 0 then 1 
+       else if combat_speed < 0 then -1 
+       else 0)
+      (player_speed st) st in
   List.iteri 
     (fun idx ic -> 
        Window.draw_image st.window ic 
          (float_of_int GameVars.width -. 2. +. 
           (5./.GameVars.tile_size)+. 
-          (float_of_int idx) *. 
+          (float_of_int (idx + 3 - List.length spd_display)) *. 
           (9./.GameVars.tile_size))
-         (5. +. (float_of_int GameVars.height -. 2.)/.2.))
-    (icons_of_int (player_speed st) st);
+         (float_of_int GameVars.height -. 2.))
+    spd_display;
+  if(buff_spd > 0) then begin
+    let buff_spd_display = icons_of_int ~style:1 (buff_spd) st in
+    Window.draw_image st.window (Animations.get_icon "+" st.icons)
+      (float_of_int GameVars.width -. 2.)
+      (float_of_int GameVars.height -. 1.);
+    List.iteri 
+      (fun idx ic -> 
+         Window.draw_image st.window ic 
+           (float_of_int GameVars.width -. 2. +. 
+            (5./.GameVars.tile_size)+. 
+            (float_of_int (idx + 3 - List.length buff_spd_display)) *. 
+            (9./.GameVars.tile_size))
+           (float_of_int GameVars.height -. 1.))
+      buff_spd_display end;
+  (* Draw inventory *)
   List.map (fun (i : Item.t) ->
       match i.pos with 
       | Inventory _ -> 
@@ -450,8 +579,7 @@ let rec game_loop st time =
   let curr_time = Window.get_time () in
   let delta = curr_time - time in 
   let delay = spf_in_milli - delta in
-  begin 
-    if (delay) > 0 then Window.wait (delay) 
+  begin if (delay) > 0 then Window.wait (delay) 
     else print_endline ("lag" ^ string_of_int delay)
   end;
 
@@ -464,7 +592,8 @@ let rec game_loop st time =
 
   let input = Window.input_query st.input in
   let st = { st with 
-             running = if not (List.mem Window.esc input) || not (List.mem Window.q input) then true else false;
+             running = not (List.mem Window.esc input) || 
+                       not (List.mem Window.q input);
              current_room = 
                st.current_room |> room_updater st;
              input = input;

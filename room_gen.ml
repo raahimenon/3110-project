@@ -30,13 +30,12 @@ let rotate_sample_90 (sample : Room.tile array array) : Room.tile array array =
       row |> Array.mapi (fun j elem ->
           sample.(j).(i)))
 
-
-(** Generate all possible samples based on inputs. Include rotations and
-    reflections if desired (may significantly decrease generator efficiency). *)
-let sample_space (input : Room.tile array array) (sample_dim : int)
-    (rotations_on : bool) (reflections_on : bool)
-  : Room.tile array array array = 
-  (* Create base sample space *)
+(** [basic_sample_space input sample_dim] returns an array of samples of size 
+    [sample_dim] * [sample_dim] taken from [input].
+    Note: the input is assumed to be non-periodic, so samples will not wrap 
+    around the ends of the input. *)
+let basic_sample_space (input : Room.tile array array) (sample_dim : int)
+  : Room.tile array array array =
   Array.init (Array.length input - sample_dim + 1)
     (fun i -> Array.init (Array.length input.(0) - sample_dim + 1)
         (fun j -> Array.init sample_dim
@@ -46,46 +45,74 @@ let sample_space (input : Room.tile array array) (sample_dim : int)
   (* Flatten top level of array *)
   |> Array.to_list |> Array.concat
 
+(** [add_reflections samples] returns an array with all elements of [samples] 
+    in addition to their reflected forms. *)
+let add_reflections (samples : Room.tile array array array)
+  : Room.tile array array array =
+  Array.concat [samples; (Array.map reflect_sample_x samples);
+                (Array.map (fun e ->
+                     e |> rotate_sample_90 |> rotate_sample_90
+                     |> reflect_sample_x) samples)]
+
+(** [add_rotations samples] returns an array with all elements of [samples] 
+    in addition to their rotated forms. *)
+let add_rotations (samples : Room.tile array array array)
+  : Room.tile array array array =
+  let rot90 = Array.map rotate_sample_90 samples in
+  let rot180 = Array.map rotate_sample_90 rot90 in
+  let rot270 = Array.map rotate_sample_90 rot180 in
+  Array.concat [samples; rot90; rot180; rot270]
+
+(** [sample_space input sample_dim rotations_on reflections_on] generates 
+    all possible samples based on inputs. Include rotations and reflections 
+    if desired (may significantly decrease generator efficiency). *)
+let sample_space (input : Room.tile array array) (sample_dim : int)
+    (rotations_on : bool) (reflections_on : bool)
+  : Room.tile array array array = 
+  (* Create base sample space *)
+  basic_sample_space input sample_dim
+
   (* Conditional addition of reflected samples *)
   |> (if reflections_on
-      then
-        (fun s -> 
-           Array.concat [s; (Array.map reflect_sample_x s);
-                         (Array.map (fun e ->
-                              e |> rotate_sample_90 |> rotate_sample_90
-                              |> reflect_sample_x) s)])
+      then add_reflections
       else (fun s -> s))
 
   (* Conditional addition of rotated samples *)
   |> (if rotations_on 
-      then (fun s ->
-          let rot90 = Array.map rotate_sample_90 s in
-          let rot180 = Array.map rotate_sample_90 rot90 in
-          let rot270 = Array.map rotate_sample_90 rot180 in
-          Array.concat [s; rot90; rot180; rot270])
+      then add_rotations
       else (fun s -> s))
 
+(** [weight_ref] contains the weights of each sample in the sample space. 
+    Guaranteed to be intialized before being called. *)
 let weight_ref : int array ref = ref [||]
+(** [noisy_target_coords] contains the coordinates of the next wave section 
+    selected for collapsing. Initialized with values [0, 0] to ensure that the 
+    WFC algorithm will begin in the upper-left corner of the room. While this 
+    reduces the number of possible rooms, it ensures that the resulting room 
+    will be well-connected. *)
 let noisy_target_coords : int array = [|0; 0|]
-
-(** [get_entropy elem] returns the number of possibilities for a given element 
-    in the wave *)
+(** [get_entropy elem] returns the Shannon Entropy (SE) of a given wave 
+    section. SE is calculated based on the probability for each sample that 
+    the slice will actually collapse to it. *)
 let get_entropy (elem : bool array) : float =
+  (* Total number of possibilities *)
   let total_pos =
     Array.fold_left (fun prev b -> prev +. (Bool.to_float b)) 0. elem
   in
+  (* Sum of all probabilities *)
   let total_SE = ref 0. in
-  Array.iter2
-    (fun valid weight ->
-       if (not valid)
-       then ()
-       else (let p = (float_of_int weight)
-                     /. total_pos in
-             total_SE := !total_SE
-                         -. (p *. (log p) /. (log 2.) /. (float_of_int weight))))
+  Array.iter2 (fun valid weight ->
+      if (not valid)
+      then ()
+      else (let p = (float_of_int weight) /. total_pos in
+            total_SE :=
+              !total_SE -. (p *. (log p) /. (log 2.) /. (float_of_int weight))))
     elem !weight_ref;
-
-  if (Array.mem true elem) then !total_SE +. Random.float 1e-6 else -1.
+  (* Contradictory slices are given a SE of -1. This is because, ordinarily, 
+     both contradictory and collapsed slices have a SE of 0, but our 
+     implementation requires that we ignore contradictory slices, so we need 
+     to separate the two. *)
+  if (Array.mem true elem) then !total_SE +. Random.float 1e-6 else -1.0
 
 (** [get_indices condition a] returns the indices of all elements in array 
     [a] that satisfy [condition]. *)
@@ -109,8 +136,12 @@ let get_indices2 (condition : 'a -> bool) (a : 'a array array)
 
   Array.init (Queue.length temp) (fun i -> Queue.pop temp)
 
+(** [iters] tracks the number of iterations that the WFC algorithm has 
+    run through *)
 let iters = ref 0
-
+(** [count_instances collection elem] counts the number of elements in 
+    [collection] that are equal to [elem]. Comparison uses structural
+    equality. *)
 let count_instances (collection : 'a array) (elem : 'a) : int =
   let count = ref 0 in
   for i = 0 to Array.length collection - 1 do
@@ -118,84 +149,84 @@ let count_instances (collection : 'a array) (elem : 'a) : int =
   done;
   !count
 
-let rec collapse_loop (samples : Room.tile array array array)
-    (wave : bool array array array) (output : Room.tile option array array)
-    (seed : int) (minimum_entropy : float) : Room.tile array array =
-  (* Initialize RNG TODO: does this need to be done in-function? *)
-  Random.init seed;
-
-  (* Get possible samples *)
+(** [observe wave samples output] 'observes' a randomly selected section of 
+    the wave, collapsing it to a viable sample. *)
+let observe (wave : bool array array array)
+    (samples : Room.tile array array array)
+    (output : Room.tile option array array) : unit =
+  (* Randomly select a sample *)
   let sample_indices =
     wave.(noisy_target_coords.(0)).(noisy_target_coords.(1)) |> get_indices (fun s -> s)
   in
-
-  print_endline ("get random sample of " ^ (string_of_int (Array.length sample_indices)));
-  (* Randomly select a sample *)
   let sample_index = 
     Array.get sample_indices (Random.int (Array.length sample_indices))
   in
 
-  (* Propogate the collapse to output *)
+  (* Manifest the collapse in the output array *)
   for i = 0 to Array.length samples.(sample_index) - 1 do
     for j = 0 to Array.length samples.(sample_index).(i) - 1 do
       output.(noisy_target_coords.(0) + i).(noisy_target_coords.(1) + j)
       <- Some samples.(sample_index).(i).(j)
     done
-  done;
+  done
 
-  (* Adjust wave possibilities *)
-  for i = max 0 (noisy_target_coords.(0) - (Array.length samples.(0)) + 1)
-    to min (Array.length wave - 1)
-        (noisy_target_coords.(0) + (Array.length samples.(0)) - 1) do
-    for j = max 0 (noisy_target_coords.(1) - (Array.length samples.(0).(0)) + 1)
-      to min (Array.length wave.(0) - 1)
-          (noisy_target_coords.(1) + (Array.length samples.(0).(0)) - 1) do
-      (* Iterate across each sample *)
-      wave.(i).(j)
-      <- (samples |> Array.map
-            (* Check that sample is viable by comparing each predicted tile 
-               with partially collapsed output *)
-            (sample_viable output i j));
-      if (Array.mem true wave.(i).(j)) then () else (
-        print_endline ""; 
-        for n = 0 to Array.length samples.(0) - 1 do
-          for m = 0 to Array.length samples.(0).(0) - 1 do
-            match output.(i + n).(j + m) with
-            | Some Room.Wall a -> print_string " w "
-            | Some Room.Floor a -> print_string " f "
-            | None -> print_string " _ ";
-            | other -> print_string " ? " 
-          done; print_endline "";
-        done
-      )
+(** [fully_collapsed samples output i j] returns whether or not the wave at 
+    coordinates [i], [j] is collapsed. *)
+let fully_collapsed (samples : Room.tile array array array)
+    (output : Room.tile option array array) (i : int) (j : int) : bool =
+  let status = ref true in
+  for n = 0 to (Array.length samples.(0) - 1) do
+    for m = 0 to (Array.length samples.(0).(n) - 1) do
+      (match output.(i + n).(j + m) with
+       | None -> status := false
+       | Some other -> ())
+    done
+  done;
+  !status
+
+(** [wave_propogate s w o] recalculates the viabilities of samples in 
+    [s] across the wave [w] based on changes to output [o]. This refactoring 
+    is meant to be called after [observe] as a part of the propogation step 
+    of the WFC algorithm. *)
+let wave_propogate (s : Room.tile array array array)
+    (w : bool array array array) (o : Room.tile option array array) : unit =
+  (* Check that each sample is viable by comparing each predicted tile with 
+     partially collapsed output *)
+  for i = max 0 (noisy_target_coords.(0) - (Array.length s.(0)) + 1)
+    to min (Array.length w - 1)
+        (noisy_target_coords.(0) + (Array.length s.(0)) - 1) do
+    for j = max 0 (noisy_target_coords.(1) - (Array.length s.(0).(0)) + 1)
+      to min (Array.length w.(0) - 1)
+          (noisy_target_coords.(1) + (Array.length s.(0).(0)) - 1) do
+      w.(i).(j) <- (s |> Array.map (sample_viable o i j));
     done;
-  done;
+  done
 
-  (* Recalculate minimum entropy *)
+(** [propogate_entropy wave samples output] recalculates the entropies across 
+    the wave to identify the section with the lowest entropy, which will be 
+    collapsed on the next step of the WFC algorithm. *)
+let propogate_entropy (wave: bool array array array)
+    (samples : Room.tile array array array)
+    (output : Room.tile option array array) : unit =
   let new_min_ent = ref (Float.max_float) in
   for i = 0 to (Array.length wave - 1) do
     for j = 0 to (Array.length wave.(i) - 1) do
       (* Check that section has not been collapsed *)
-      let fully_collapsed = ref true in
-      for n = 0 to (Array.length samples.(0) - 1) do
-        for m = 0 to (Array.length samples.(0).(n) - 1) do
-          (match output.(i + n).(j + m) with
-           | None -> fully_collapsed := false
-           | Some other -> ())
-        done
-      done;
+      let collapsed = fully_collapsed samples output i j in
 
       (* If uncollapsed and non-contradictory, calculate entropy and 
          compare to minimum *)
-      if (!fully_collapsed || ((get_entropy wave.(i).(j)) < 0.))
+      if (collapsed || ((get_entropy wave.(i).(j)) < 0.))
       then ()
       else (noisy_target_coords.(0) <- i;
             noisy_target_coords.(1) <- j;
             new_min_ent := min !new_min_ent (get_entropy wave.(i).(j)));
     done
-  done;
+  done
 
-  (*TODO: Remove debug prints bundle *)
+(** [print_progress output] prints information on the state of the algorithm 
+    after another step through the core loop. *)
+let print_progress (output : Room.tile option array array) : unit = 
   let ctiles = ref 0 in
   for i = 0 to Array.length output - 1 do
     for j = 0 to Array.length output.(0) - 1 do
@@ -205,28 +236,57 @@ let rec collapse_loop (samples : Room.tile array array array)
     done;
   done;
   iters := !iters + 1;
-  print_string ("[" ^ (string_of_float (Sys.time ()) ^ "]"));
-  print_string ("\t Steps: " ^ (string_of_int !iters));
-  print_string ("\t Collapsed Tiles: " ^ (string_of_int !ctiles) ^ " / " ^ (string_of_int ((Array.length output) * (Array.length output.(0)))));
-  (* print_string ("\t MinEnt: " ^ (string_of_float !new_min_ent)); *)
-  print_endline "";
+  print_endline ("[" ^ (string_of_float (Sys.time ()) ^ "]") ^ "\t Steps: "
+                 ^ (string_of_int !iters) ^ "\t Collapsed Tiles: "
+                 ^ (string_of_int !ctiles) ^ " / "
+                 ^ (string_of_int ((Array.length output)
+                                   * (Array.length output.(0)))))
 
-  (* Check if any uncollapsed tiles remain *)
+(** [unbind output samples] returns the contents of [output], removed from the 
+    option monad. *)
+let unbind (output : Room.tile option array array)
+    (samples : Room.tile array array array) : Room.tile array array =
+  for i = 0 to Array.length output - 1 do
+    for j = 0 to Array.length output.(0) - 1 do
+      match output.(i).(j) with
+      | None -> output.(i).(j) <- Some samples.(0).(0).(0)
+      | Some t -> ()
+    done;
+  done;
+  (output |> Array.map
+     (fun row -> row |> Array.to_list |> List.filter_map
+                   (fun o -> o) |> Array.of_list))
+
+(** [collapse_loop samples wave output seed] collapses sections of the wave 
+    until the entire wave has been collapsed. Executes the core loop of the 
+    WFC algorithm. *)
+let rec collapse_loop (samples : Room.tile array array array)
+    (wave : bool array array array) (output : Room.tile option array array)
+    (seed : int) : Room.tile array array =
+  (* Initialize RNG *)
+  Random.init seed;
+
+  (* Observe a wave section *)
+  observe wave samples output;
+
+  (* Adjust wave possibilities *)
+  wave_propogate samples wave output;
+
+  (* Recalculate minimum entropy *)
+  propogate_entropy wave samples output;
+
+  (* Progress readout *)
+  print_progress output;
+
+  (* If uncollapsed sections remain, keep going. Otherwise, unbind tiles from 
+     options and return. *)
   if (Array.exists (Array.mem None) output)
-  (* If incomplete, keep going *)
-  then (collapse_loop samples wave output (Random.int 20010827) !new_min_ent)
-  (* If complete, unbind tiles from options and return *)
-  else (for i = 0 to Array.length output - 1 do
-          for j = 0 to Array.length output.(0) - 1 do
-            match output.(i).(j) with
-            | None -> output.(i).(j) <- Some samples.(0).(0).(0)
-            | Some t -> ()
-          done;
-        done;
-        (output |> Array.map
-           (fun row -> row |> Array.to_list |> List.filter_map
-                         (fun o -> o) |> Array.of_list)))
+  then (collapse_loop samples wave output (Random.int 20010827))
+  else (unbind output samples)
 
+(** [remove_diagonals r] returns room [r] with all weak diagonal walls removed. 
+    Weak diagonal walls are those where floor tiles on opposite sides of the 
+    contiguous wall are still diagonally adjacent. *)
 let remove_diagonals (r : Room.tile array array) : unit =	
   for i = 0 to Array.length r - 2 do	
     for j = 0 to Array.length r.(0) - 2 do	
@@ -240,11 +300,14 @@ let remove_diagonals (r : Room.tile array array) : unit =
       | _ -> ()	
     done	
   done	
-(** [cleam_room r] returns the room r with well connected spaces.- *)	
+(** [cleam_room r] returns the room r with well connected spaces. *)	
 let clean_room (r : Room.tile array array) : unit =	
   (* open up diagonal gaps *)	
   remove_diagonals r	
 
+(** [generate_wave output_rows output_cols sample_dim samples output] returns 
+    a wave array representing the viability of samples across the given
+    output based on the various inputs. *)
 let generate_wave (output_rows : int) (output_cols : int) (sample_dim : int) 	
     (samples : Room.tile array array array)	
     (output : Room.tile option array array) : bool array array array =	
@@ -253,11 +316,18 @@ let generate_wave (output_rows : int) (output_cols : int) (sample_dim : int)
         (fun j -> Array.init (Array.length samples) 	
             (fun n -> sample_viable output i j samples.(n))))
 
-let seed_floor_tiles (output : Room.tile option array array) : unit =
-  for i = 0 to ((min (Array.length output) (Array.length output.(0))) - 1 ) / 5
-  do output.(i * 5).(i * 5) <- Some (!ft_ref.(0))	
+(** [seed_floor_tiles output dist] seeds the output array with floor tiles at 
+    the specified spacing. *)
+let seed_floor_tiles (output : Room.tile option array array)
+    (dist : int) : unit =
+  for i = 0
+    to ((min (Array.length output) (Array.length output.(0))) - 1 ) / dist
+  do output.(i * dist).(i * dist) <- Some (!ft_ref.(0))	
   done
 
+(** [validate_inputs input sample_dim output_rows output_cols difficulty] 
+    ensure that none of the inputs for the WFC algorithm are out of bounds.
+    Raises [failure] if any inputs are invalid. *)
 let validate_inputs (input : Room.tile array array) (sample_dim : int)
     (output_rows : int) (output_cols : int) (difficulty : float) : unit =
   if (sample_dim <= 0)
@@ -270,13 +340,17 @@ let validate_inputs (input : Room.tile array array) (sample_dim : int)
   then failwith "invalid inputs at generate_room"
   else ()
 
+(** [point_distance_vector p0 p1] determins the distance vector between two 
+    points [p0] and [p1].  *)
 let point_distance_vector (p0 : float * float) (p1 : float * float)
   : float * float =
   (fst p1 -. fst p0, snd p1 -. snd p0)
 
+(** [dot_product v0 v1] is the dot product of two vectors, [v0] and [v1]. *)
 let dot_product (v0 : float * float) (v1 : float * float) : float =
   (fst v0 *. fst v1) +. (snd v0 *. snd v1)
 
+(** [vector_magnitude] returns the magnitude of vector [v]. *)
 let vector_magnitude (v : float * float) =
   sqrt ((fst v *. fst v) +. (snd v *. snd v))
 
@@ -297,23 +371,60 @@ let get_perlin_weight (v0 : float * float) (v1 : float * float)
   let d3 = point_distance_vector (1.0, 0.0) spt in
 
   (* Get dot products of gradients and distance vectors *)
-  let p0 = dot_product v0 d0 in
-  let p1 = dot_product v1 d1 in
-  let p2 = dot_product v2 d2 in
-  let p3 = dot_product v3 d3 in
+  let p0 = dot_product v0 d0 in let p1 = dot_product v1 d1 in
+  let p2 = dot_product v2 d2 in let p3 = dot_product v3 d3 in
 
   (* Take weighted average *)
   let avg =
-    ((p0 *. vector_magnitude d0)
-     +. (p1 *. vector_magnitude d1)
-     +. (p2 *. vector_magnitude d2)
-     +. (p3 *. vector_magnitude d3))
-    /. ((vector_magnitude d0)
-        +. (vector_magnitude d1)
-        +. (vector_magnitude d2)
-        +. (vector_magnitude d3))
+    ((p0 *. vector_magnitude d0) +. (p1 *. vector_magnitude d1)
+     +. (p2 *. vector_magnitude d2) +. (p3 *. vector_magnitude d3))
+    /. ((vector_magnitude d0) +. (vector_magnitude d1)
+        +. (vector_magnitude d2) +. (vector_magnitude d3))
   in
   avg
+
+(** [random_gradients r] returns an array of random gradient vectors based on 
+    the dimensions of [r]. *)
+let random_gradients (r : Room.tile array array) : (float * float) array array =
+  Array.init (Array.length r + 1)
+    (fun i -> Array.init (Array.length r.(0) + 1)
+        (fun j -> let angle = Random.float (2.0 *. Float.pi) in
+          ((Float.cos angle), (Float.sin angle))))
+
+(** [perlin_weights vectors r] returns an array of weights calculated as in 
+    the Perlin Noise algorithm based on its inputs. *)
+let perlin_weights (vectors : (float * float) array array)
+    (r : Room.tile array array) : float array array =
+  Array.init (Array.length r)
+    (fun i -> Array.init (Array.length r.(0))
+        (fun j -> (get_perlin_weight
+                     vectors.(i).(j)
+                     vectors.(i).(j + 1)
+                     vectors.(i + 1).(j)
+                     vectors.(i + 1).(j + 1)
+                   +. 1.0)
+                  /. 2.0))
+
+(** [perlin_coords weights r difficulty] returns the qualifying coordinate 
+    pairs from the perlin noise map created with the given inputs. *)
+let perlin_coords (weights : float array array) (r : Room.tile array array)
+    (difficulty : float) : (float * float) array = 
+  let coords = Queue.create () in
+  for i = 0 to Array.length r - 1 do
+    for j = 0 to Array.length r.(i) - 1 do
+      match r.(i).(j), weights.(i).(j) with
+      | Floor f, w when w < (Float.pow difficulty 0.7) -> Queue.add (float_of_int i, float_of_int j) coords
+      | _ -> ()
+    done
+  done;
+
+  coords |> Queue.to_seq |> Array.of_seq
+  |> Array.to_list |> List.filter_map (fun coords ->
+      if not (r.(int_of_float (fst coords)).(int_of_float (snd coords))
+              <> !ft_ref.(0))
+      then (Some coords)
+      else (None))
+  |> Array.of_list
 
 (** [get_enemy_coords difficulty seed r] returns an array of coordinates where 
     enemies will be spawned on a given floor based on the inputs. The Perlin Noise 
@@ -325,39 +436,41 @@ let get_enemy_coords (difficulty : float) (seed : int)
   Random.init seed;
 
   (* Generate gradient vector map *)
-  let vectors =
-    Array.init (Array.length r + 1)
-      (fun i -> Array.init (Array.length r.(0) + 1)
-          (fun j -> let angle = Random.float (2.0 *. Float.pi) in
-            ((Float.cos angle), (Float.sin angle))))
-  in
+  let vectors = random_gradients r in
 
   (* Calculate perlin weights *)
-  let weights =
-    Array.init (Array.length r)
-      (fun i -> Array.init (Array.length r.(0))
-          (fun j -> (get_perlin_weight
-                       vectors.(i).(j)
-                       vectors.(i).(j + 1)
-                       vectors.(i + 1).(j)
-                       vectors.(i + 1).(j + 1)
-                     +. 1.0)
-                    /. 2.0))
-  in
+  let weights = perlin_weights vectors r in
 
   (* Filter for wall collisions and difficulty caps *)
-  let coords = Queue.create () in
-  weights |> Array.iteri
-    (fun i row ->
-       row |> Array.iteri (fun j w ->
-           print_float w; print_string " ";
-           if (w < Float.pow difficulty 0.7) && (match r.(i).(j) with
-               | Room.Wall w -> false
-               | other -> true)
-           then (Queue.add (float_of_int i, float_of_int j) coords)
-           else ()));
+  perlin_coords weights r difficulty
 
-  coords |> Queue.to_seq |> Array.of_seq
+(** [add_border tiles window] surrounds the tiles in [tiles] with walls. *)
+let add_border (tiles : Room.tile array array ref) (window : Window.window) 
+  : unit = 
+  let bounded_tiles = 
+    Array.make_matrix (Array.length !tiles + 2) (Array.length !tiles.(0) + 2)
+      (Room.Wall (Animations.load_image "./sprites/room/wall.bmp"
+                    (Window.get_renderer window)))
+  in
+  for i = 0 to Array.length !tiles - 1 do
+    for j = 0 to Array.length !tiles.(0) - 1 do
+      bounded_tiles.(i + 1).(j + 1) <- !tiles.(i).(j)
+    done
+  done;
+  tiles := bounded_tiles
+
+let counts_as_wall tiles x y = 
+  try match tiles.(y).(x) with |Room.Floor _ -> 0 |_ -> 1 
+  with e -> 1
+let count_walls_around tiles x y = 
+  counts_as_wall tiles (x-1) (y-1) +
+  counts_as_wall tiles (x) (y-1) +
+  counts_as_wall tiles (x+1) (y-1) +
+  counts_as_wall tiles (x+1) (y) +
+  counts_as_wall tiles (x+1) (y+1) +
+  counts_as_wall tiles (x) (y+1) +
+  counts_as_wall tiles (x-1) (y+1) +
+  counts_as_wall tiles (x-1) (y)
 
 (** Central method. Too sleepy to document. Haven't even test it yet. *)
 let generate_room (seed : int) (input : Room.tile array array)
@@ -380,13 +493,9 @@ let generate_room (seed : int) (input : Room.tile array array)
 
   (* Empty tile array for the final layout *)
   let output = Array.make output_rows (Array.make output_cols None) in
-  (* Seed floor tiles *)
-  for i = 0 to ((min output_rows output_cols) - 1 ) / 5 do
-    output.(i * 5).(i * 5) <- Some (!ft_ref.(0))
-  done;
 
   (* Seed floor tiles *)
-  seed_floor_tiles output;
+  seed_floor_tiles output 5;
 
   (* 3D boolean array represents the wave *)	
   let wave = generate_wave output_rows output_cols sample_dim samples output in
@@ -397,7 +506,6 @@ let generate_room (seed : int) (input : Room.tile array array)
 
   (* Generative loop *)
   let tiles : Room.tile array array ref = ref [||] in
-  print_string ("\ninitial tiles array length: "^(string_of_int (Array.length !tiles)^"\n"));
   for attempt = 1 to attempts do
     if (Array.length !tiles = 0)
     then
@@ -405,11 +513,9 @@ let generate_room (seed : int) (input : Room.tile array array)
         print_endline "attempt";
         let w_cop = wave |> Array.map (Array.map Array.copy) in
         let o_cop = output |> Array.map Array.copy in
-        try tiles := collapse_loop (samples) (w_cop) (o_cop) (!attempt_seed) (get_entropy wave.(0).(0))
-        with Failure f -> (iters := 0; Random.init !attempt_seed; attempt_seed := Random.bits ();
-                           print_string ("Attempt " ^ (string_of_int attempt)
-                                         ^ " failed: " ^ f ^ "\n"));
-
+        try tiles := collapse_loop (samples) (w_cop) (o_cop) (!attempt_seed)
+        with Failure f -> (iters := 0; Random.init !attempt_seed;
+                           attempt_seed := Random.bits (););
           (* Ensure limits have not been exceeded *)
           if (Sys.time () > time_cap || attempt = attempts)
           then failwith ("Timed out after attempt " ^ (string_of_int attempt)
@@ -418,25 +524,14 @@ let generate_room (seed : int) (input : Room.tile array array)
           else ())
     else ();
   done;
-  print_endline "success!!!";
 
   (* Add bounding walls *)
-  let bounded_tiles = 
-    Array.make_matrix (Array.length !tiles + 2) (Array.length !tiles.(0) + 2)
-      (Room.Wall (Animations.load_image "./sprites/room/wall.bmp"
-                    (Window.get_renderer window)))
-  in
-  for i = 0 to Array.length !tiles - 1 do
-    for j = 0 to Array.length !tiles.(0) - 1 do
-      bounded_tiles.(i + 1).(j + 1) <- !tiles.(i).(j)
-    done
-  done;
-  tiles := bounded_tiles;
+  add_border tiles window;
 
-  (* TODO: Clean floating rooms *)
+  (* Clean floating rooms *)
   clean_room !tiles;
 
-  (* TODO: Place entrance and exit *)
+  (* Place entrance and exit *)
   let entry_coords = ref (0., 0.) in
   for i = 0 to Array.length !tiles - 1 do
     for j = 0 to Array.length !tiles.(0) - 1 do
@@ -447,19 +542,6 @@ let generate_room (seed : int) (input : Room.tile array array)
       else ()
     done
   done;
-
-  let counts_as_wall tiles x y = 
-    try match tiles.(y).(x) with |Room.Floor _ -> 0 |_ -> 1 
-    with e -> 1 in
-  let count_walls_around tiles x y = 
-    counts_as_wall tiles (x-1) (y-1) +
-    counts_as_wall tiles (x) (y-1) +
-    counts_as_wall tiles (x+1) (y-1) +
-    counts_as_wall tiles (x+1) (y) +
-    counts_as_wall tiles (x+1) (y+1) +
-    counts_as_wall tiles (x) (y+1) +
-    counts_as_wall tiles (x-1) (y+1) +
-    counts_as_wall tiles (x-1) (y) in
 
   let exit_coords =
     (* Implementation of Prim's MST algorithm *)
@@ -523,18 +605,18 @@ let generate_room (seed : int) (input : Room.tile array array)
     Room.Exit (Animations.load_image "./sprites/room/exit.bmp" 
                  (Window.get_renderer window));
 
-  (* TODO: Place enemies *)
+  (* Place enemies *)
   let enemy_coords = get_enemy_coords difficulty seed !tiles |> Array.to_list in
   let enemies = 
     Random.init seed;
     let rec place_enemies num accu = function
       | [] -> accu
-      | (x,y)::t -> 
-        place_enemies (num + 1) 
-          (Enemy.make_enemy seed num window x y difficulty :: accu)
-          t in 
+      | (x,y)::t -> place_enemies (num + 1) 
+                      (Enemy.make_enemy seed num window x y difficulty :: accu)
+                      t in 
     place_enemies 0 [] enemy_coords in
 
+  (* Place items *)
   let items = 
     Random.init seed;
     let rec place_items tiles accu x y =

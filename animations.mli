@@ -2,7 +2,7 @@ type image = int * int * Sdltexture.t
 type icon = string * image
 type animation = string * image array
 
-(** [load_image f r] is the [image] generated from the text file [f] relative to 
+(** [load_image f r] is the [image] generated from the bmp file [f] relative to 
     the current filepath. [f] must be formatted like a matrix where position
     i,j is the comma delimited rgba value of the pixel, columns are split by
     spaces and rows by newlines*)

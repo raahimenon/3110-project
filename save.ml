@@ -18,8 +18,8 @@ let enemy_json (enemy : Enemy.Enemy.t) : string =
   let pos = match enemy.e.pos with (x, y) -> [|x;y|] in
   "\t\t{\n"
   ^"\t\t\t\"id\": "^Int.to_string enemy.id^",\n"
-  ^"\t\t\t\"x\": "^Int.to_string (int_of_float pos.(0))^"0,\n"
-  ^"\t\t\t\"y\": "^Int.to_string (int_of_float pos.(1))^"0,\n"
+  ^"\t\t\t\"x\": "^Float.to_string pos.(0)^"0,\n"
+  ^"\t\t\t\"y\": "^Float.to_string pos.(1)^"0,\n"
   ^"\t\t\t\"health\": "^Int.to_string enemy.health
   ^"\n\t\t}"
 

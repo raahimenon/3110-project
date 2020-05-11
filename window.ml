@@ -69,7 +69,7 @@ let rec print_list lst = match lst with
   | [] -> print_endline ""
   | h::t -> print_string (Sdlkeycode.to_string h); print_list t
 
-
+(** [remove elt lst] is the list with all the elements of [lst] except [elt] *)
 let  remove elt lst = 
   let rec rec_remove  elt lst = 
     match lst with 

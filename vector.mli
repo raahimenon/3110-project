@@ -1,7 +1,9 @@
+(**Functions manipulating two dimensional vectors.*)
 open Entity
 
 (** representation of a 2 dimensional float vector*)
 type t = float * float
+
 (** representation of a 2 dimensional int vector*)
 type s = int * int 
 
@@ -28,7 +30,9 @@ val greater : t -> t -> bool
 (** [print x] returns a representation of s.*)
 val print : t -> string
 
-val abs_vec : t->t
+(** [abs_vec x] returns a vector with each entry equal to the absolute value
+    of the corresponding entry in [x].*)
+val abs_vec : t -> t
 
 (** [add_ints x y] is the int vector that is formed when [x] and [y] are added,
     with addition taking place componentwise.*)
@@ -48,8 +52,8 @@ val dir_of_vec : t -> Entity.direction
 (** [magnitude vec] is magnitude of vector [vec]. *)
 val magnitude : t -> float
 
-(** [add sc x] is the float vector that is formed when each entry of [x] is
-    multiplied with [sc].*)
+(** [scale_vec sc x] is the float vector that is formed when each entry of [x] 
+    is  multiplied by [sc].*)
 val scale_vec : float -> t -> t
 
 (** [subtract x y] is the float vector that is formed when [x] and [y] are 

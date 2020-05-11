@@ -5,3 +5,4 @@
 #directory "_build";;
 #load "gameVars.cmo";;
 #load "animations.cmo";;
+#load "vector.cmo";;

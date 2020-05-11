@@ -14,8 +14,8 @@ let enemy_json (enemy : Enemy.Enemy.t) : string =
   let pos = match enemy.e.pos with (x, y) -> [|x;y|] in
   "\t\t{\n"
   ^"\t\t\t\"id\": "^Int.to_string enemy.id^",\n"
-  ^"\t\t\t\"x\": "^Int.to_string (int_of_float pos.(0))^"0,\n"
-  ^"\t\t\t\"y\": "^Int.to_string (int_of_float pos.(1))^"0,\n"
+  ^"\t\t\t\"x\": "^Float.to_string pos.(0)^"0,\n"
+  ^"\t\t\t\"y\": "^Float.to_string pos.(1)^"0,\n"
   ^"\t\t\t\"health\": "^Int.to_string enemy.health
   ^"\n\t\t}"
 
@@ -64,11 +64,10 @@ let save (r : Room.t) (name : string) : unit =
 
   (* Check that [name] is not already being used in [saves] *)
   (* TODO: rebuild saves folder if missing *)
-  |> (fun s -> if Array.mem s (try (Sys.readdir "saves")
-                               with Sys_error f -> 
-                                 raise (Sys_error "saves folder not found"))
-       then failwith "[name] is already being used"
-       else "saves/"^s)
+  |> (fun s -> (try (Sys.readdir "saves")
+                with Sys_error f -> 
+                  raise (Sys_error "saves folder not found")) |> ignore;
+       "saves/"^s)
 
   (* Write save to [name] in [saves] *)
   |> Stdlib.open_out

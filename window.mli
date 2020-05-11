@@ -52,16 +52,28 @@ val wait : float -> unit
 (** [input_state] checks if there are any keys to be read at the moment *)
 val input_query : input list -> input list
 
+(** [collision p1 s1 p2 s2] is the truth value of whether or not a collision
+    occurs between an object at position [p1] with size [s1] and the object
+    at position [p2] with size [s2] *)
 val collision : int*int -> int*int -> int*int -> int*int -> bool
 
+(** [get_renderer win] is the [Sdlrender.t] associated with [win] *)
 val get_renderer : window -> Sdlrender.t
 
+(** [get_time ()] is the number of ticks since the game has started *)
 val get_time : unit -> int
 
+(** [wait ms] waits for [ms] milliseconds before proceeding with the program *)
 val wait : ms: int -> unit
 
+(** [draw_hud_box win int slot] draws the frame for the HUD and the marker
+    over inventory slot [slot] *)
 val draw_hud_box : window -> int -> unit
 
-val draw_rect_col : window -> int * int * int -> float * float -> float * float -> unit
+(** [draw_rect_col win (r,g,b) (x,y) (w,h)] draws a rectangle with color 
+    [(r,g,b)] at position [(x,y)] with width [w] and height [h] to window
+    [win] *)
+val draw_rect_col : 
+  window -> int * int * int -> float * float -> float * float -> unit
 
 val health_col_ratio : float -> int*int*int

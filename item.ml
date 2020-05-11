@@ -2,14 +2,14 @@ open Entity
 open Vector
 
 type item_pos =  Inventory of {index : int} | Position of Entity.pos_t
+
 type stat_type = Combat of Combat.t | Buff of Buff.t
-type entity_id = int
 
 type item_type = {
   seed: int;
   e: Entity.e;
   pos: item_pos;
-  id : entity_id;
+  id : Entity.entity_id;
   unique_stats : stat_type;
   in_use : bool;
 }

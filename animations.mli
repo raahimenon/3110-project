@@ -1,5 +1,12 @@
+(** Module for handling sprite animations *)
+
+(**[image] represents the type of an image that can be drawn to the screen. *)
 type image = int * int * Sdltexture.t
+
+(**[icon] represents the type of an icon that can be drawn to the hud. *)
 type icon = string * image
+
+(**[animation] represents the type of an animation or spritesheet. *)
 type animation = string * image array
 
 (** [load_image f r] is the [image] generated from the text file [f] relative to 
@@ -29,11 +36,6 @@ val get_icon : string -> icon list -> image
 (** [next_frame i a] is the next frame index next image in animation [a] given 
     that it is currently on frame number [i] (assuming the animation loops) *)
 val next_frame : int -> animation -> int
-
-(** [im_to_str i] converts image [i] into a string formatted lke a matrix where
-    position i,j is the comma delimited rgba value of the pixel, columns are 
-    split by spaces, and rows by newlines *)
-(*val im_to_str : image -> string*)
 
 (** [size_im i] is (w,h) where [w] is the width and [h] is the height of 
     image [i]*)

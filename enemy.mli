@@ -1,12 +1,16 @@
+(** Enemies in the game*)
+
 open Entity
-type entity_id = int
+
+(** The type of possible states of an enemy.*)
 type enemy_state = 
   | EIdle | EHeal | EMove of direction | EAttack of direction
   | EDead | EKnock of direction * int
 
+(**[enemy_type] is the type of an enemy *)
 type enemy_type =  {
   e: Entity.e;
-  id : entity_id;
+  id : Entity.entity_id;
   max_health : int;
   health : int;
   aggro_on : bool;

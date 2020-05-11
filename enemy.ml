@@ -1,5 +1,4 @@
 open Entity
-type entity_id = int
 
 type enemy_state = 
   | EIdle | EHeal | EMove of direction | EAttack of direction
@@ -7,7 +6,7 @@ type enemy_state =
 
 type enemy_type =  {
   e: Entity.e;
-  id : entity_id;
+  id : Entity.entity_id;
   max_health : int;
   health : int;
   aggro_on : bool;

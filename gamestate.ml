@@ -55,12 +55,6 @@ let update_animation e lf =
     {e with curr_frame_num = Animations.next_frame e.curr_frame_num e.curr_anim}
   else e
 
-(** [change_animation e anim_name] is [e] with the current animation changed to 
-    the animation given by [anim_name].*)
-let change_animation e anim_name = 
-  {e with 
-   curr_anim = (get_anim e e.direction anim_name); 
-   curr_frame_num = 0;}
 
 (** [apply_buffs player buffs] is the new player generated when the 
     each buff in [buffs] is applied to [player].*)

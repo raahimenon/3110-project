@@ -1,3 +1,4 @@
+
 (** [player_json p] returns the json form of player [p]. *)
 let player_json (p : Player.Player.t) : string =
   let pos = match p.e.pos with (x,y) -> [|x;y|] in
@@ -16,15 +17,17 @@ let enemy_json (enemy : Enemy.Enemy.t) : string =
   let pos = match enemy.e.pos with (x, y) -> [|x;y|] in
   "\t\t{\n"
   ^"\t\t\t\"id\": "^Int.to_string enemy.id^",\n"
-  ^"\t\t\t\"x\": "^Int.to_string (int_of_float pos.(0))^"0,\n"
-  ^"\t\t\t\"y\": "^Int.to_string (int_of_float pos.(1))^"0,\n"
+  ^"\t\t\t\"x\": "^Float.to_string pos.(0)^"0,\n"
+  ^"\t\t\t\"y\": "^Float.to_string pos.(1)^"0,\n"
   ^"\t\t\t\"health\": "^Int.to_string enemy.health
   ^"\n\t\t}"
 
-(** [item_json i] returns the json form of item [i]. *)
+
+(** [item_json i] returns the json form of item [i]. *)=
 let item_json (i : Item.Item.t) : string =
   let pos = match i.pos with 
-    | Inventory {index = i} -> [|float_of_int i *. -1. -. 1.; float_of_int i *. -1.-.1.|]
+    | Inventory {index = i} -> [|float_of_int i *. -1. -. 1.; 
+                                 float_of_int i *. -1.-.1.|]
     | Position (x,y) -> [|x;y|]
   in
   let dur = match i.unique_stats with
@@ -39,7 +42,7 @@ let item_json (i : Item.Item.t) : string =
   ^"\t\t\t\"durability\": "^Int.to_string dur
   ^"\n\t\t}"
 
-(** [room_json r] returns a [string] representing [room] [r] in json 
+(** [room_json r] returns a [representation of room [r] in json 
     form. *)
 let room_json (r : Room.t) : string =
   " {\n"

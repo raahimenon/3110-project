@@ -1,3 +1,4 @@
+(**Module containing constants used in the execution of the game.*)
 val tile_size : float
 val fps : float
 val spf : float

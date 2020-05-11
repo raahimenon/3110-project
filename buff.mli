@@ -1,6 +1,6 @@
 (**[Buff] will be the module containing buff effects*)
 
-(** [buff_type] is the kind of effect the buff will give*)
+(** [buff_type] is a type representing the effects of a given buff.*)
 type buff_type = Max_health of int 
                | Health of int 
                | Attack of int 

@@ -535,9 +535,6 @@ let generate_room (seed : int) (input : Room.tile array array)
           t in 
     place_enemies 0 [] enemy_coords in
 
-  (* TODO: Place items *)
-  (* TODO: respond to enemy density and/or entrance/exit distance *)
-
   let items = 
     Random.init seed;
     let rec place_items tiles accu x y =

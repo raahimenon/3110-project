@@ -1,3 +1,5 @@
+(** [player_json p] returns a representation of player [p] in json 
+    form. *)
 let player_json (p : Player.Player.t) : string =
   let pos = match p.e.pos with (x,y) -> [|x;y|] in
   "\t\t{\n"
@@ -10,6 +12,8 @@ let player_json (p : Player.Player.t) : string =
   ^"\t\t\t\"speed\": "^Int.to_string p.unique_stats.movement_speed
   ^"\n\t\t},\n"
 
+(** [enemy_json e] returns a representation of enemy [e] in json 
+    form. *)
 let enemy_json (enemy : Enemy.Enemy.t) : string =
   let pos = match enemy.e.pos with (x, y) -> [|x;y|] in
   "\t\t{\n"
@@ -19,9 +23,12 @@ let enemy_json (enemy : Enemy.Enemy.t) : string =
   ^"\t\t\t\"health\": "^Int.to_string enemy.health
   ^"\n\t\t}"
 
+(** [item_json i] returns a representation of item [i] in json 
+    form. *)
 let item_json (i : Item.Item.t) : string =
   let pos = match i.pos with 
-    | Inventory {index = i} -> [|float_of_int i *. -1. -. 1.; float_of_int i *. -1.-.1.|]
+    | Inventory {index = i} -> [|float_of_int i *. -1. -. 1.; 
+                                 float_of_int i *. -1.-.1.|]
     | Position (x,y) -> [|x;y|]
   in let dur = match i.unique_stats with
       | Buff {max_durability;durability;effect} -> durability
@@ -35,7 +42,7 @@ let item_json (i : Item.Item.t) : string =
   ^"\t\t\t\"durability\": "^Int.to_string dur
   ^"\n\t\t}"
 
-(** [room_json r] returns a [string] representing [room] [r] in json 
+(** [room_json r] returns a [representation of room [r] in json 
     form. *)
 let room_json (r : Room.t) : string =
   " {\n"
@@ -63,11 +70,11 @@ let save (r : Room.t) (name : string) : unit =
        else (name^".json"))
 
   (* Check that [name] is not already being used in [saves] *)
-  (* TODO: rebuild saves folder if missing *)
-  |> (fun s -> (try (Sys.readdir "saves")
-                with Sys_error f -> 
-                  raise (Sys_error "saves folder not found")) |> ignore;
-       "saves/"^s)
+  |> (fun s -> if Array.mem s (try (Sys.readdir "saves")
+                               with Sys_error f -> 
+                                 raise (Sys_error "saves folder not found"))
+       then failwith "[name] is already being used"
+       else "saves/"^s)
 
   (* Write save to [name] in [saves] *)
   |> Stdlib.open_out

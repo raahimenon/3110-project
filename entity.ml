@@ -1,8 +1,10 @@
+
 type direction = |Up |Down |Left |Right
-type pos_t =  float*float
-type size_t = int*int
+type pos_t =  float * float
+type size_t = int * int
 type name_t = string
 type entity_frame = Animations.image
+type entity_id = int
 
 module type Entity = sig
   type t 
@@ -20,12 +22,17 @@ type e ={
   name : name_t;
   frame : entity_frame;
   pos : pos_t;
-  curr_tile : int*int;
+  curr_tile : int * int;
 }
 
-let get_anim (ent:e) (dir : direction) (name:string) : Animations.animation =
+let get_anim e dir name =
   match dir with
-  | Down ->  Animations.anim_from_dir_name ent.animations "down" name
-  | Up -> Animations.anim_from_dir_name ent.animations "up" name
-  | Right -> Animations.anim_from_dir_name ent.animations "right" name
-  | Left -> Animations.anim_from_dir_name ent.animations "left" name
+  | Down ->  Animations.anim_from_dir_name e.animations "down" name
+  | Up -> Animations.anim_from_dir_name e.animations "up" name
+  | Right -> Animations.anim_from_dir_name e.animations "right" name
+  | Left -> Animations.anim_from_dir_name e.animations "left" name
+
+let change_animation e name = 
+  {e with 
+   curr_anim = (get_anim e e.direction name); 
+   curr_frame_num = 0;}

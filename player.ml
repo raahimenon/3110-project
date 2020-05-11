@@ -1,8 +1,7 @@
 open Entity
 open Vector
 open Enemy
-type stat_type = Combat of Combat.t | Buff of Buff.t
-type entity_id = int
+
 type player_state = 
   | Idle 
   | Use_Item of Entity.direction * int 
@@ -17,7 +16,7 @@ type player_type =  {
   tile_destination:int*int;
   attacking_enemies : Enemy.t list;
   last_damage : int;
-  id : entity_id;
+  id : Entity.entity_id;
   max_health : int;
   health : int;
   state : player_state;
@@ -52,7 +51,7 @@ module Player : (Entity with type t = player_type)  = struct
         | _ -> () end end
 end
 
-let make_player name id (win : Window.window) x y= 
+let make_player name id (win : Window.window) x y = 
   let animations = Animations.load_directions name (Window.get_renderer win) in
   let curr_anim = Animations.anim_from_dir_name animations "down" "idle" in
   {

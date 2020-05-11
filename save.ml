@@ -1,3 +1,4 @@
+(** [player_json p] returns the json form of player [p]. *)
 let player_json (p : Player.Player.t) : string =
   let pos = match p.e.pos with (x,y) -> [|x;y|] in
   "\t\t{\n"
@@ -10,6 +11,7 @@ let player_json (p : Player.Player.t) : string =
   ^"\t\t\t\"speed\": "^Int.to_string p.unique_stats.movement_speed
   ^"\n\t\t},\n"
 
+(** [enemy_json enemy] returns the json form of enemy [enemy]. *)
 let enemy_json (enemy : Enemy.Enemy.t) : string =
   let pos = match enemy.e.pos with (x, y) -> [|x;y|] in
   "\t\t{\n"
@@ -19,13 +21,15 @@ let enemy_json (enemy : Enemy.Enemy.t) : string =
   ^"\t\t\t\"health\": "^Int.to_string enemy.health
   ^"\n\t\t}"
 
+(** [item_json i] returns the json form of item [i]. *)
 let item_json (i : Item.Item.t) : string =
   let pos = match i.pos with 
     | Inventory {index = i} -> [|float_of_int i *. -1. -. 1.; float_of_int i *. -1.-.1.|]
     | Position (x,y) -> [|x;y|]
-  in let dur = match i.unique_stats with
-      | Buff {max_durability;durability;effect} -> durability
-      | other -> -1
+  in
+  let dur = match i.unique_stats with
+    | Buff {max_durability;durability;effect} -> durability
+    | other -> -1
   in
   "\t\t{\n"
   ^"\t\t\t\"seed\": "^Int.to_string i.seed^",\n"
@@ -54,21 +58,20 @@ let room_json (r : Room.t) : string =
     already being used as a filename in [saves], then raise [Failure]. *)
 let save (r : Room.t) (name : string) : unit =
   (* Check that [name] is alphanumeric chars only *)
-  (* TODO: figure out if using Str module is worth the effort *)
   name |> String.uppercase_ascii |> String.to_seq |> List.of_seq
-  |> List.map Char.code
-  |> List.exists (fun i -> (i < 48) || (i > 57 && i < 65) || (i > 90))
+  |> List.map Char.code |> List.exists
+    (fun i -> (i < 48) || (i > 57 && i < 65) || (i > 90))
   |> (fun (b : bool) : string -> if b
        then failwith "[name] contains non-alphanumeric characters"
-       else (name^".json"))
+       else (name ^ ".json"))
 
   (* Check that [name] is not already being used in [saves] *)
-  (* TODO: rebuild saves folder if missing *)
-  |> (fun s -> if Array.mem s (try (Sys.readdir "saves")
-                               with Sys_error f -> 
-                                 raise (Sys_error "saves folder not found"))
-       then failwith "[name] is already being used"
-       else "saves/"^s)
+  |> (fun s ->
+      if Array.mem s (try (Sys.readdir "saves")
+                      with Sys_error f -> 
+                        raise (Sys_error "saves folder not found"))
+      then failwith "[name] is already being used"
+      else "saves/"^s)
 
   (* Write save to [name] in [saves] *)
   |> Stdlib.open_out

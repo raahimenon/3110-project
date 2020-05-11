@@ -33,7 +33,12 @@ let draw_room (win : Window.window) (rm : t) =
   Array.iteri (fun y row -> Array.iteri (fun x tile -> draw_tile win rm x y) row) rm.tiles;
   ignore(List.map (fun item -> match item.pos with |Position _ -> Item.draw win rm.player.e.pos item |_ -> ()) rm.items);
   ignore(List.map (fun enemy -> Enemy.draw win rm.player.e.pos enemy)  rm.enemies);
+  Array.iteri (fun y row -> Array.iteri (fun x tile -> 
+      match tile with 
+      | Floor _ -> ()
+      | _ -> draw_tile win rm x y) row) rm.tiles;
   Player.draw win rm.player.e.pos rm.player
+
 
 let entity_at_tile rm tile =
   List.exists (fun x -> x.e.curr_tile = tile && match x.pos with |Inventory _ -> false |_ -> true) rm.items

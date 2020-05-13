@@ -661,7 +661,7 @@ let rec game_loop st time =
     if gen_room_check st 
     then create_new_room st
     else room_updater st st.current_room in
-
+  if next_room.player.health <= 0 then exit 0;
   let input = Window.input_query st.input in
   let st = { st with 
              running = not (List.mem Window.esc input) || 

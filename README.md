@@ -10,6 +10,8 @@ To compile our game, run the command `make build`
 To play our game, run the command `make play`
 To get our docs, run the command `make docs`
 To run our test suite, run the command `make test`
+- Note that due to prevention of filename contamination, if you wish to run `make test` again
+you must remove `testsave.json` from the `saves` folder
 To clean build files, run `make clean`
 
 # Gameplay

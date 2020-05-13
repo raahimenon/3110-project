@@ -9,10 +9,12 @@ open Enemy
 
 let main () = 
 
-  let () = print_string "JSON File to Load in Saves Folder (If unsure, leave blank'):"  in
+  print_string "JSON File to Load in Saves Folder (If unsure, leave blank):";
   let load_file = read_line () in
 
-  let window = Window.create_window "3110 Project" (GameVars.width * (int_of_float GameVars.tile_size)) (GameVars.height * (int_of_float GameVars.tile_size)) in
+  let window = Window.create_window "3110 Project" 
+      (GameVars.width * (int_of_float GameVars.tile_size)) 
+      (GameVars.height * (int_of_float GameVars.tile_size)) in
 
   (* let default_enemy = make_enemy "link" 3 window in  *)
 

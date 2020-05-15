@@ -23,7 +23,7 @@ let enemy_json (enemy : Enemy.Enemy.t) : string =
   ^"\n\t\t}"
 
 
-(** [item_json i] returns the json form of item [i]. *)=
+(** [item_json i] returns the json form of item [i]. *)
 let item_json (i : Item.Item.t) : string =
   let pos = match i.pos with 
     | Inventory {index = i} -> [|float_of_int i *. -1. -. 1.; 

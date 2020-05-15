@@ -22,7 +22,6 @@ let enemy_json (enemy : Enemy.Enemy.t) : string =
   ^"\t\t\t\"health\": "^Int.to_string enemy.health
   ^"\n\t\t}"
 
-
 (** [item_json i] returns the json form of item [i]. *)
 let item_json (i : Item.Item.t) : string =
   let pos = match i.pos with 
@@ -75,7 +74,6 @@ let save (r : Room.t) (name : string) : unit =
                         raise (Sys_error "saves folder not found"))
       then failwith "[name] is already being used"
       else "saves/"^s)
-
   (* Write save to [name] in [saves] *)
   |> Stdlib.open_out
   |> (fun channel ->

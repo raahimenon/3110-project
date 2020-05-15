@@ -284,10 +284,8 @@ let rec collapse_loop (samples : Room.tile array array array)
   then (collapse_loop samples wave output (Random.int 20010827))
   else (unbind output samples)
 
-(** [remove_diagonals r] returns room [r] with all weak diagonal walls removed. 
-    Weak diagonal walls are those where floor tiles on opposite sides of the 
-    contiguous wall are still diagonally adjacent. *)
-let remove_diagonals (r : Room.tile array array) : unit =	
+(** [cleam_room r] returns the room r with well connected spaces. *)
+let clean_room (r : Room.tile array array) : unit =	
   for i = 0 to Array.length r - 2 do	
     for j = 0 to Array.length r.(0) - 2 do	
       match r.(i).(j), r.(i + 1).(j), r.(i).(j + 1), r.(i + 1).(j + 1) with	
@@ -299,12 +297,7 @@ let remove_diagonals (r : Room.tile array array) : unit =
          r.(i + 1).(j + 1) <- Floor f1;)	
       | _ -> ()	
     done	
-  done	
-(** [cleam_room r] returns the room r with well connected spaces. *)	
-let clean_room (r : Room.tile array array) : unit =	
-  (* open up diagonal gaps *)	
-  remove_diagonals r	
-
+  done
 (** [generate_wave output_rows output_cols sample_dim samples output] returns 
     a wave array representing the viability of samples across the given
     output based on the various inputs. *)
@@ -360,10 +353,7 @@ let vector_magnitude (v : float * float) =
     though typical perlin noise generation utilizes more sophisticated 
     interpolation methods. *)
 let get_perlin_weight (v0 : float * float) (v1 : float * float)
-    (v2 : float * float) (v3 : float * float) : float =
-  (* Get random sample point *)
-  let spt = (Random.float 1.0, Random.float 1.0) in
-
+    (v2 : float * float) (v3 : float * float) (spt : float * float) : float =
   (* Get distance vectors *)
   let d0 = point_distance_vector (0.0, 1.0) spt in
   let d1 = point_distance_vector (1.0, 1.0) spt in
@@ -386,8 +376,10 @@ let get_perlin_weight (v0 : float * float) (v1 : float * float)
 (** [random_gradients r] returns an array of random gradient vectors based on 
     the dimensions of [r]. *)
 let random_gradients (r : Room.tile array array) : (float * float) array array =
-  Array.init (Array.length r + 1)
-    (fun i -> Array.init (Array.length r.(0) + 1)
+  let rows = 2 + (Array.length r) / 5 in
+  let cols = 2 + (Array.length r.(0)) / 5 in
+  Array.init (rows)
+    (fun i -> Array.init (cols)
         (fun j -> let angle = Random.float (2.0 *. Float.pi) in
           ((Float.cos angle), (Float.sin angle))))
 
@@ -398,10 +390,12 @@ let perlin_weights (vectors : (float * float) array array)
   Array.init (Array.length r)
     (fun i -> Array.init (Array.length r.(0))
         (fun j -> (get_perlin_weight
-                     vectors.(i).(j)
-                     vectors.(i).(j + 1)
-                     vectors.(i + 1).(j)
-                     vectors.(i + 1).(j + 1)
+                     vectors.(i / 5).(j / 5)
+                     vectors.(i / 5).(j / 5 + 1)
+                     vectors.(i / 5 + 1).(j / 5)
+                     vectors.(i / 5 + 1).(j / 5 + 1)
+                     (mod_float (float_of_int i) 5.0,
+                      mod_float (float_of_int j) 5.0)
                    +. 1.0)
                   /. 2.0))
 
@@ -413,7 +407,10 @@ let perlin_coords (weights : float array array) (r : Room.tile array array)
   for i = 0 to Array.length r - 1 do
     for j = 0 to Array.length r.(i) - 1 do
       match r.(i).(j), weights.(i).(j) with
-      | Floor f, w when w < (Float.pow difficulty 0.7) -> Queue.add (float_of_int i, float_of_int j) coords
+      | Floor f, w
+        when (w < (Float.pow difficulty 0.75)
+              && ((Random.float 1.0) > difficulty))
+        -> Queue.add (float_of_int i, float_of_int j) coords
       | _ -> ()
     done
   done;
@@ -488,7 +485,7 @@ let generate_room (seed : int) (input : Room.tile array array)
   (* Generate sample space list *)
   let samples = sample_space input sample_dim rotations_on reflections_on in
 
-  (* Weights *)
+  (* Calculate weights *)
   weight_ref := samples |> Array.map (count_instances samples);
 
   (* Empty tile array for the final layout *)
@@ -500,7 +497,7 @@ let generate_room (seed : int) (input : Room.tile array array)
   (* 3D boolean array represents the wave *)	
   let wave = generate_wave output_rows output_cols sample_dim samples output in
 
-  (* Seed should vary between attempts *)
+  (* Vary seed between attempts *)
   Random.init seed;
   let attempt_seed = ref (Random.bits ()) in
 
@@ -524,6 +521,7 @@ let generate_room (seed : int) (input : Room.tile array array)
           else ())
     else ();
   done;
+  print_endline "Spawning entities...";
 
   (* Add bounding walls *)
   add_border tiles window;
@@ -656,7 +654,7 @@ let simple_gen (seed : int) (window : Window.window): Room.t =
   let f = Room.Floor (Animations.load_image "./sprites/room/floor.bmp" (Window.get_renderer window)) in
   let w = Room.Wall (Animations.load_image "./sprites/room/wall.bmp" (Window.get_renderer window)) in
   ft_ref := [|f|];
-  let big_chungus_input = 
+  let input_1 = 
     [|
       [| w ; w ; w ; f ; w ; w ; w ; w ; w ; w ; w ; w ; f ; w ; w ; w |];
       [| w ; w ; w ; f ; w ; w ; w ; w ; w ; f ; f ; f ; f ; f ; f ; w |];
@@ -677,7 +675,7 @@ let simple_gen (seed : int) (window : Window.window): Room.t =
     |]
   in
   Random.init seed;
-  generate_room seed (big_chungus_input) (3) (20) (20) (0.1) (window)
+  generate_room seed (input_1) (3) (20) (20) (0.1) (window)
   |> (fun room -> print_endline ""; print_int seed; print_endline "";
 
        (room.tiles |> Array.iter

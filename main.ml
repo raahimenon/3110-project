@@ -21,9 +21,11 @@ let main () =
   (* let default_room = {(Load.load load_file window)  with items =[default_item; default_item2]; enemies = [default_enemy;]} in *)
 
   let rm_ref : Room.t option ref = ref None in
+  Random.self_init ();
   Thread.create (fun seed -> rm_ref := 
                     Some (try Load.load load_file window 
-                          with e -> Room_gen.simple_gen (Random.int 1073741823) 
+                          with e -> Room_gen.simple_gen
+                                      (Random.int 20010827) 
                                       window)) () |> ignore;
   let frame = ref 0 in
   let loading = Animations.load_animation 

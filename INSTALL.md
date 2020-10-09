@@ -15,7 +15,7 @@
 
 # P.S.:
   - make sure that ocamlbuild and ocamlfind are installed
-  - make sure that `pkg-config` is installed (on ubuntu this can eb done with `apt install`)
+  - make sure that `pkg-config` is installed (on ubuntu this can be done with `apt install`)
   - if opam prompts you to install something, please do
     - some of these installations might be OS dependent - for example, sdl2
       is installed differently depending on your OS

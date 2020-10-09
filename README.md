@@ -3,7 +3,7 @@
 Group project for CS 3110 of Raahi Menon, Ritwick Bhargava, and Sean Yang
 
 # Installation
-For installation instructions, please see `INSTALL.txt`
+For installation instructions, please see `INSTALL.md`
 
 # Compilation
 To compile our game, run the command `make build`

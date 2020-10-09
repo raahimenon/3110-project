@@ -23,8 +23,9 @@ Use the `W` key to move upwards, `S` to move downwards, `A` to move left and
 
 Use `Right Click` to pick up objects and interact with exit stairs, use 
 `left click` to use whatever item you are currently holding. To drop the item
-in your current inventory slot, press `E`. Note that you cannot drop an item
-where it would collid with another object, such as a **wall** or **enemy**.
+in your current inventory slot, press `E`. To move through your hotbar, scroll
+with the mouse. Note that you cannot drop an item where it would collid with 
+another object, such as a **wall** or **enemy**.
 
 When not holding an item, `left click` defaults to melee attack.
 
